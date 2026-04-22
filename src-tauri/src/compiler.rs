@@ -53,6 +53,8 @@ pub fn compile_latex(tex_path: String) -> CompileResult {
         .arg(&output_dir)
         .arg("--keep-logs")
         .arg(&tex_path)
+        // Run from the project directory so \input / \include resolve relative paths correctly
+        .current_dir(&output_dir)
         .output();
 
     match output {

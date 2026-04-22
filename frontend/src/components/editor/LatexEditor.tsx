@@ -17,7 +17,7 @@ interface EditorProps {
 export function LatexEditor({ className = "" }: EditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const { content, setContent, activeFilePath } = useAppStore();
+  const { content, setContent, activeFilePath, rootFilePath } = useAppStore();
   const { compile } = useCompile();
   const { assist, aiStatus } = useAiAssist();
 
@@ -97,10 +97,17 @@ export function LatexEditor({ className = "" }: EditorProps) {
     <div className={`flex flex-col h-full ${className}`}>
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-800 bg-zinc-950">
-        <span className="text-xs text-zinc-500 flex-1 truncate">
-          {activeFilePath
-            ? activeFilePath.split("/").pop()
-            : "Sin archivo abierto"}
+        <span className="text-xs text-zinc-500 flex-1 truncate flex items-center gap-2 min-w-0">
+          <span className="truncate">
+            {activeFilePath
+              ? activeFilePath.split("/").pop()
+              : "Sin archivo abierto"}
+          </span>
+          {rootFilePath && rootFilePath !== activeFilePath && (
+            <span className="shrink-0 text-[10px] text-zinc-600 border border-zinc-700 rounded px-1.5 py-0.5">
+              compilando: {rootFilePath.split("/").pop()}
+            </span>
+          )}
         </span>
         <button
           onClick={handleAiAssist}

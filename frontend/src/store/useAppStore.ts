@@ -1,17 +1,21 @@
 import { create } from "zustand";
 import type { AiConfig, AiStatus, CompileResult, CompileStatus, FileEntry } from "../types";
 
+export type SidebarTab = "files" | "search" | "logs";
+
 interface AppState {
   // Workspace
   workspaceDir: string | null;
-  files: FileEntry[];
+  projectTree: FileEntry | null;
 
-  // Active document
+  // Open files — future: tab bar
+  openFiles: string[];
   activeFilePath: string | null;
   content: string;
   isDirty: boolean;
 
   // Compilation
+  rootFilePath: string | null;
   compileStatus: CompileStatus;
   compileResult: CompileResult | null;
   pdfPath: string | null;
@@ -21,31 +25,45 @@ interface AppState {
   aiBuffer: string;
   aiConfig: AiConfig;
 
-  // Tectonic
+  // UI
   tectonicAvailable: boolean;
+  sidebarTab: SidebarTab;
 
-  // Actions
-  setWorkspace: (dir: string, files: FileEntry[]) => void;
-  setFiles: (files: FileEntry[]) => void;
+  // Actions — workspace
+  setWorkspace: (dir: string, tree: FileEntry, rootPath?: string | null) => void;
+  setProjectTree: (tree: FileEntry) => void;
+  setRootFilePath: (path: string | null) => void;
+
+  // Actions — files
   openFile: (path: string, content: string) => void;
+  closeFile: (path: string) => void;
   setContent: (content: string) => void;
   markClean: () => void;
+
+  // Actions — compilation
   setCompileStatus: (status: CompileStatus) => void;
   setCompileResult: (result: CompileResult) => void;
   setPdfPath: (path: string | null) => void;
+
+  // Actions — AI
   setAiStatus: (status: AiStatus) => void;
   appendAiToken: (token: string) => void;
   clearAiBuffer: () => void;
   setAiConfig: (config: Partial<AiConfig>) => void;
+
+  // Actions — UI
   setTectonicAvailable: (v: boolean) => void;
+  setSidebarTab: (tab: SidebarTab) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
   workspaceDir: null,
-  files: [],
+  projectTree: null,
+  openFiles: [],
   activeFilePath: null,
   content: "",
   isDirty: false,
+  rootFilePath: null,
   compileStatus: "idle",
   compileResult: null,
   pdfPath: null,
@@ -57,22 +75,42 @@ export const useAppStore = create<AppState>((set) => ({
     model: "gpt-4o",
   },
   tectonicAvailable: true,
+  sidebarTab: "files",
 
-  setWorkspace: (dir, files) =>
-    set({ workspaceDir: dir, files }),
-  setFiles: (files) => set({ files }),
+  setWorkspace: (dir, tree, rootPath = null) =>
+    set({ workspaceDir: dir, projectTree: tree, rootFilePath: rootPath }),
+  setProjectTree: (tree) => set({ projectTree: tree }),
+  setRootFilePath: (path) => set({ rootFilePath: path }),
+
   openFile: (path, content) =>
-    set({ activeFilePath: path, content, isDirty: false }),
+    set((s) => ({
+      activeFilePath: path,
+      content,
+      isDirty: false,
+      openFiles: s.openFiles.includes(path) ? s.openFiles : [...s.openFiles, path],
+    })),
+  closeFile: (path) =>
+    set((s) => {
+      const openFiles = s.openFiles.filter((p) => p !== path);
+      const activeFilePath =
+        s.activeFilePath === path
+          ? (openFiles[openFiles.length - 1] ?? null)
+          : s.activeFilePath;
+      return { openFiles, activeFilePath };
+    }),
   setContent: (content) => set({ content, isDirty: true }),
   markClean: () => set({ isDirty: false }),
+
   setCompileStatus: (status) => set({ compileStatus: status }),
   setCompileResult: (result) => set({ compileResult: result }),
   setPdfPath: (path) => set({ pdfPath: path }),
+
   setAiStatus: (status) => set({ aiStatus: status }),
-  appendAiToken: (token) =>
-    set((s) => ({ aiBuffer: s.aiBuffer + token })),
+  appendAiToken: (token) => set((s) => ({ aiBuffer: s.aiBuffer + token })),
   clearAiBuffer: () => set({ aiBuffer: "" }),
   setAiConfig: (config) =>
     set((s) => ({ aiConfig: { ...s.aiConfig, ...config } })),
+
   setTectonicAvailable: (v) => set({ tectonicAvailable: v }),
+  setSidebarTab: (tab) => set({ sidebarTab: tab }),
 }));

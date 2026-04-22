@@ -30,8 +30,8 @@ export default function App() {
 
       {/* Three-column layout */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar – 220px fixed */}
-        <div className="w-[220px] shrink-0">
+        {/* Sidebar – 280px fixed (40px toolbar + 240px panel) */}
+        <div className="w-[280px] shrink-0">
           <Sidebar />
         </div>
 

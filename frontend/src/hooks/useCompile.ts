@@ -5,7 +5,9 @@ import { useAppStore } from "../store/useAppStore";
 export function useCompile() {
   const {
     activeFilePath,
+    rootFilePath,
     content,
+    isDirty,
     setCompileStatus,
     setCompileResult,
     setPdfPath,
@@ -13,20 +15,23 @@ export function useCompile() {
   } = useAppStore();
 
   const compile = useCallback(async () => {
-    if (!activeFilePath) return;
+    // Always flush the active file before compiling
+    if (activeFilePath && isDirty) {
+      await saveFile(activeFilePath, content);
+      markClean();
+    }
+
+    // Compile the designated root, falling back to the active file
+    const target = rootFilePath ?? activeFilePath;
+    if (!target) return;
 
     setCompileStatus("compiling");
 
     try {
-      // Always save before compiling
-      await saveFile(activeFilePath, content);
-      markClean();
-
-      const result = await compileLatex(activeFilePath);
+      const result = await compileLatex(target);
       setCompileResult(result);
 
       if (result.success && result.pdf_path) {
-        // Append a cache-busting timestamp so the PDF viewer reloads
         setPdfPath(`${result.pdf_path}?t=${Date.now()}`);
         setCompileStatus("success");
       } else {
@@ -40,7 +45,16 @@ export function useCompile() {
       });
       setCompileStatus("error");
     }
-  }, [activeFilePath, content, setCompileStatus, setCompileResult, setPdfPath, markClean]);
+  }, [
+    activeFilePath,
+    rootFilePath,
+    content,
+    isDirty,
+    setCompileStatus,
+    setCompileResult,
+    setPdfPath,
+    markClean,
+  ]);
 
   return { compile };
 }

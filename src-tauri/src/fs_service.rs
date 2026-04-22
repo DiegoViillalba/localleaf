@@ -31,7 +31,10 @@ pub struct FileEntry {
     pub path: String,
     pub is_dir: bool,
     pub extension: Option<String>,
+    pub children: Option<Vec<FileEntry>>,
 }
+
+// ─── Commands ─────────────────────────────────────────────────────────────────
 
 #[tauri::command]
 pub fn read_file(path: String) -> Result<String, String> {
@@ -52,6 +55,7 @@ pub fn save_file(path: String, content: String) -> Result<(), String> {
     fs::write(&path, content).map_err(|e| format!("Error al guardar '{}': {}", path, e))
 }
 
+/// Returns a flat list of the immediate children of a directory.
 #[tauri::command]
 pub fn list_directory(dir_path: String) -> Result<Vec<FileEntry>, String> {
     let entries = fs::read_dir(&dir_path)
@@ -72,6 +76,7 @@ pub fn list_directory(dir_path: String) -> Result<Vec<FileEntry>, String> {
                 path: path.to_string_lossy().to_string(),
                 is_dir: meta.is_dir(),
                 extension,
+                children: None,
             })
         })
         .collect();
@@ -83,6 +88,137 @@ pub fn list_directory(dir_path: String) -> Result<Vec<FileEntry>, String> {
     });
 
     Ok(result)
+}
+
+/// Returns the full recursive directory tree rooted at `dir_path`.
+/// Hidden files/dirs (starting with '.') and common build artifacts are excluded.
+#[tauri::command]
+pub fn scan_project(dir_path: String) -> Result<FileEntry, String> {
+    scan_dir(Path::new(&dir_path), 0)
+        .map_err(|e| format!("Error escaneando proyecto: {}", e))
+}
+
+fn scan_dir(dir: &Path, depth: u32) -> std::io::Result<FileEntry> {
+    // Guard against accidental deep recursion (symlink loops, etc.)
+    if depth > 10 {
+        return Ok(FileEntry {
+            name: dir.file_name().unwrap_or_default().to_string_lossy().to_string(),
+            path: dir.to_string_lossy().to_string(),
+            is_dir: true,
+            extension: None,
+            children: Some(vec![]),
+        });
+    }
+
+    let name = dir
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| dir.to_string_lossy().to_string());
+
+    let mut children: Vec<FileEntry> = fs::read_dir(dir)?
+        .filter_map(|e| e.ok())
+        .filter_map(|e| {
+            let path = e.path();
+            let entry_name = e.file_name().to_string_lossy().to_string();
+
+            // Skip hidden and common build/cache dirs
+            if entry_name.starts_with('.') {
+                return None;
+            }
+            if matches!(
+                entry_name.as_str(),
+                "target" | "node_modules" | "_minted*" | "__pycache__"
+            ) {
+                return None;
+            }
+
+            let meta = e.metadata().ok()?;
+
+            if meta.is_dir() {
+                scan_dir(&path, depth + 1).ok()
+            } else {
+                let extension = path.extension().map(|e| e.to_string_lossy().to_string());
+                Some(FileEntry {
+                    name: entry_name,
+                    path: path.to_string_lossy().to_string(),
+                    is_dir: false,
+                    extension,
+                    children: None,
+                })
+            }
+        })
+        .collect();
+
+    children.sort_by(|a, b| match (a.is_dir, b.is_dir) {
+        (true, false) => std::cmp::Ordering::Less,
+        (false, true) => std::cmp::Ordering::Greater,
+        _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+    });
+
+    Ok(FileEntry {
+        name,
+        path: dir.to_string_lossy().to_string(),
+        is_dir: true,
+        extension: None,
+        children: Some(children),
+    })
+}
+
+#[tauri::command]
+pub fn create_file(dir_path: String, name: String) -> Result<String, String> {
+    let name = name.trim().to_string();
+    if name.is_empty() {
+        return Err("El nombre no puede estar vacío.".to_string());
+    }
+    let path = Path::new(&dir_path).join(&name);
+    if path.exists() {
+        return Err(format!("Ya existe '{}'.", name));
+    }
+    fs::write(&path, "").map_err(|e| format!("Error al crear '{}': {}", name, e))?;
+    Ok(path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+pub fn create_folder(dir_path: String, name: String) -> Result<String, String> {
+    let name = name.trim().to_string();
+    if name.is_empty() {
+        return Err("El nombre no puede estar vacío.".to_string());
+    }
+    let path = Path::new(&dir_path).join(&name);
+    if path.exists() {
+        return Err(format!("Ya existe '{}'.", name));
+    }
+    fs::create_dir_all(&path)
+        .map_err(|e| format!("Error al crear carpeta '{}': {}", name, e))?;
+    Ok(path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+pub fn rename_entry(old_path: String, new_name: String) -> Result<String, String> {
+    let new_name = new_name.trim().to_string();
+    if new_name.is_empty() {
+        return Err("El nombre no puede estar vacío.".to_string());
+    }
+    let old = Path::new(&old_path);
+    let new_path = old
+        .parent()
+        .ok_or("No se puede renombrar el directorio raíz.")?
+        .join(&new_name);
+    if new_path.exists() {
+        return Err(format!("Ya existe '{}'.", new_name));
+    }
+    fs::rename(&old, &new_path).map_err(|e| format!("Error al renombrar: {}", e))?;
+    Ok(new_path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+pub fn delete_entry(path: String) -> Result<(), String> {
+    let p = Path::new(&path);
+    if p.is_dir() {
+        fs::remove_dir_all(p).map_err(|e| format!("Error al eliminar carpeta: {}", e))
+    } else {
+        fs::remove_file(p).map_err(|e| format!("Error al eliminar archivo: {}", e))
+    }
 }
 
 #[tauri::command]
@@ -114,6 +250,5 @@ pub fn create_project(workspace_dir: String, project_name: String) -> Result<Str
 pub async fn open_folder_dialog(app_handle: tauri::AppHandle) -> Result<Option<String>, String> {
     use tauri_plugin_dialog::DialogExt;
     let path = app_handle.dialog().file().blocking_pick_folder();
-    // FilePath implements Display — convert via to_string()
     Ok(path.map(|p| p.to_string()))
 }
