@@ -17,7 +17,7 @@ interface EditorProps {
 export function LatexEditor({ className = "" }: EditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const { content, setContent, activeFilePath, rootFilePath } = useAppStore();
+  const { content, setContent, activeFilePath, rootFilePath, compileStatus } = useAppStore();
   const { compile } = useCompile();
   const { assist, aiStatus } = useAiAssist();
 
@@ -128,13 +128,20 @@ export function LatexEditor({ className = "" }: EditorProps) {
         </button>
         <button
           onClick={compile}
-          disabled={!activeFilePath}
+          disabled={!activeFilePath || compileStatus === "compiling"}
           className="flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium
                      bg-zinc-800 text-zinc-300 border border-zinc-700
                      hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed
                      transition-colors"
         >
-          ⌘S Compilar
+          {compileStatus === "compiling" ? (
+            <>
+              <span className="inline-block w-2 h-2 rounded-full bg-zinc-400 animate-pulse" />
+              Compilando...
+            </>
+          ) : (
+            <>⌘S Compilar</>
+          )}
         </button>
       </div>
 

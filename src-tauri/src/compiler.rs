@@ -28,9 +28,9 @@ pub fn tectonic_install_instructions() -> String {
 
 /// Compile a .tex file using Tectonic. Returns the path to the generated PDF.
 #[tauri::command]
-pub fn compile_latex(tex_path: String) -> CompileResult {
+pub async fn compile_latex(tex_path: String) -> Result<CompileResult, String> {
     if !is_tectonic_available() {
-        return CompileResult {
+        return Ok(CompileResult {
             success: false,
             pdf_path: None,
             errors: vec![serde_json::json!({
@@ -39,25 +39,32 @@ pub fn compile_latex(tex_path: String) -> CompileResult {
                 "kind": "error"
             })],
             raw_log: String::new(),
-        };
+        });
     }
 
-    let path = Path::new(&tex_path);
+    let path = std::path::PathBuf::from(&tex_path);
     let output_dir = path
         .parent()
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_else(|| ".".to_string());
 
-    let output = Command::new("tectonic")
-        .arg("--outdir")
-        .arg(&output_dir)
-        .arg("--keep-logs")
-        .arg(&tex_path)
-        // Run from the project directory so \input / \include resolve relative paths correctly
-        .current_dir(&output_dir)
-        .output();
+    let tex_path_clone = tex_path.clone();
+    let output_dir_clone = output_dir.clone();
 
-    match output {
+    let output = tauri::async_runtime::spawn_blocking(move || {
+        Command::new("tectonic")
+            .arg("--outdir")
+            .arg(&output_dir_clone)
+            .arg("--keep-logs")
+            .arg(&tex_path_clone)
+            // Run from the project directory so \input / \include resolve relative paths correctly
+            .current_dir(&output_dir_clone)
+            .output()
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    Ok(match output {
         Err(e) => CompileResult {
             success: false,
             pdf_path: None,
@@ -119,7 +126,7 @@ pub fn compile_latex(tex_path: String) -> CompileResult {
                 }
             }
         }
-    }
+    })
 }
 
 #[tauri::command]

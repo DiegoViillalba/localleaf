@@ -16,7 +16,8 @@ export function PdfViewer() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pageCount, setPageCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [scale, setScale] = useState(1.4);
+  const [scale, setScale] = useState<number | "auto">("auto");
+  const [computedScale, setComputedScale] = useState(1.4);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [docVersion, setDocVersion] = useState(0);
   const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
@@ -71,13 +72,37 @@ export function PdfViewer() {
         renderTaskRef.current?.cancel();
 
         const page = await pdf.getPage(currentPage);
-        const viewport = page.getViewport({ scale });
+        
+        let currentScale = typeof scale === "number" ? scale : 1.4;
+        if (scale === "auto") {
+          const unscaledViewport = page.getViewport({ scale: 1 });
+          const container = containerRef.current;
+          if (container) {
+            const widthScale = (container.clientWidth - 48) / unscaledViewport.width;
+            const heightScale = (container.clientHeight - 48) / unscaledViewport.height;
+            currentScale = Math.min(widthScale, heightScale);
+          }
+        }
 
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        if (cancelled) return;
+        setComputedScale(currentScale);
+
+        const viewport = page.getViewport({ scale: currentScale });
+        const pixelRatio = window.devicePixelRatio || 1;
+
+        canvas.width = Math.floor(viewport.width * pixelRatio);
+        canvas.height = Math.floor(viewport.height * pixelRatio);
+        canvas.style.width = `${Math.floor(viewport.width)}px`;
+        canvas.style.height = `${Math.floor(viewport.height)}px`;
 
         const ctx = canvas.getContext("2d")!;
-        const renderTask = page.render({ canvasContext: ctx, viewport });
+        const transform = pixelRatio !== 1 ? [pixelRatio, 0, 0, pixelRatio, 0, 0] : undefined;
+        
+        const renderTask = page.render({ 
+          canvasContext: ctx, 
+          transform: transform,
+          viewport 
+        });
         renderTaskRef.current = renderTask;
 
         await renderTask.promise;
@@ -95,6 +120,27 @@ export function PdfViewer() {
       renderTaskRef.current?.cancel();
     };
   }, [currentPage, scale, pageCount, docVersion]);
+
+  // Handle auto-resize
+  useEffect(() => {
+    if (scale !== "auto") return;
+    const container = containerRef.current;
+    if (!container) return;
+
+    let timeoutId: number;
+    const resizeObserver = new ResizeObserver(() => {
+      clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        setDocVersion((v) => v + 1);
+      }, 150);
+    });
+
+    resizeObserver.observe(container);
+    return () => {
+      resizeObserver.disconnect();
+      clearTimeout(timeoutId);
+    };
+  }, [scale]);
 
   const isEmpty = !pdfPath;
 
@@ -138,16 +184,20 @@ export function PdfViewer() {
 
         {/* Zoom */}
         <button
-          onClick={() => setScale((s) => Math.max(0.5, s - 0.2))}
+          onClick={() => setScale((s) => Math.max(0.5, (s === "auto" ? computedScale : s) - 0.2))}
           className="px-2 py-0.5 rounded text-xs text-zinc-400 hover:text-zinc-200"
         >
           −
         </button>
-        <span className="text-xs text-zinc-500 w-10 text-center">
-          {Math.round(scale * 100)}%
+        <span 
+          className="text-xs text-zinc-500 w-12 text-center cursor-pointer hover:text-zinc-300" 
+          onClick={() => setScale("auto")}
+          title="Ajustar a la ventana"
+        >
+          {Math.round(computedScale * 100)}%
         </span>
         <button
-          onClick={() => setScale((s) => Math.min(3, s + 0.2))}
+          onClick={() => setScale((s) => Math.min(3, (s === "auto" ? computedScale : s) + 0.2))}
           className="px-2 py-0.5 rounded text-xs text-zinc-400 hover:text-zinc-200"
         >
           +
