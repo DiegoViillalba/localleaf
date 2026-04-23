@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { AiConfig, AiStatus, CompileResult, CompileStatus, FileEntry } from "../types";
 
-export type SidebarTab = "files" | "search" | "logs";
+export type SidebarTab = "files" | "search" | "logs" | "outline";
 
 interface AppState {
   // Workspace
@@ -28,6 +28,7 @@ interface AppState {
   // UI
   tectonicAvailable: boolean;
   sidebarTab: SidebarTab;
+  editorJumpLine: number | null;
 
   // Actions — workspace
   setWorkspace: (dir: string, tree: FileEntry, rootPath?: string | null) => void;
@@ -54,6 +55,7 @@ interface AppState {
   // Actions — UI
   setTectonicAvailable: (v: boolean) => void;
   setSidebarTab: (tab: SidebarTab) => void;
+  setEditorJumpLine: (line: number | null) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -76,6 +78,7 @@ export const useAppStore = create<AppState>((set) => ({
   },
   tectonicAvailable: true,
   sidebarTab: "files",
+  editorJumpLine: null,
 
   setWorkspace: (dir, tree, rootPath = null) =>
     set({ workspaceDir: dir, projectTree: tree, rootFilePath: rootPath }),
@@ -113,4 +116,5 @@ export const useAppStore = create<AppState>((set) => ({
 
   setTectonicAvailable: (v) => set({ tectonicAvailable: v }),
   setSidebarTab: (tab) => set({ sidebarTab: tab }),
+  setEditorJumpLine: (line) => set({ editorJumpLine: line }),
 }));

@@ -3,6 +3,7 @@ import { SidebarToolbar } from "./SidebarToolbar";
 import { FileTreePanel } from "./panels/FileTreePanel";
 import { SearchPanel } from "./panels/SearchPanel";
 import { LogsPanel } from "./panels/LogsPanel";
+import { OutlinePanel } from "./panels/OutlinePanel";
 
 export function Sidebar() {
   const sidebarTab = useAppStore((s) => s.sidebarTab);
@@ -16,6 +17,7 @@ export function Sidebar() {
         {sidebarTab === "files"  && <FileTreePanel />}
         {sidebarTab === "search" && <SearchPanel />}
         {sidebarTab === "logs"   && <LogsPanel />}
+        {sidebarTab === "outline" && <OutlinePanel />}
       </div>
     </div>
   );

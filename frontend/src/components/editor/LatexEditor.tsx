@@ -17,7 +17,7 @@ interface EditorProps {
 export function LatexEditor({ className = "" }: EditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const { content, setContent, activeFilePath, rootFilePath, compileStatus } = useAppStore();
+  const { content, setContent, activeFilePath, rootFilePath, compileStatus, editorJumpLine, setEditorJumpLine } = useAppStore();
   const { compile } = useCompile();
   const { assist, aiStatus } = useAiAssist();
 
@@ -80,6 +80,26 @@ export function LatexEditor({ className = "" }: EditorProps) {
       });
     }
   }, [activeFilePath]); // intentionally only on file change, not every keystroke
+
+  // Handle jump to line from Outline
+  useEffect(() => {
+    if (editorJumpLine === null) return;
+    const view = viewRef.current;
+    if (!view) return;
+
+    // Convert 1-indexed line to CodeMirror position
+    const doc = view.state.doc;
+    const lineNum = Math.min(Math.max(1, editorJumpLine), doc.lines);
+    const line = doc.line(lineNum);
+    
+    view.dispatch({
+      selection: { anchor: line.from, head: line.from },
+      effects: EditorView.scrollIntoView(line.from, { y: "center" }),
+    });
+
+    // Reset so clicking the same item again works
+    setEditorJumpLine(null);
+  }, [editorJumpLine, setEditorJumpLine]);
 
   const handleAiAssist = useCallback(() => {
     const view = viewRef.current;
