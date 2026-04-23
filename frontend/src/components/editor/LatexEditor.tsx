@@ -49,6 +49,14 @@ export function LatexEditor({ className = "" }: EditorProps) {
               return true;
             },
           },
+          // Ctrl+G → save + compile (Windows requested shortcut)
+          {
+            key: "Ctrl-g",
+            run: () => {
+              compile();
+              return true;
+            },
+          },
         ]),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
@@ -122,7 +130,7 @@ export function LatexEditor({ className = "" }: EditorProps) {
   }, [assist]);
 
   return (
-    <div className={`flex flex-col h-full ${className}`}>
+    <div className={`flex flex-col h-full overflow-hidden ${className}`}>
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-800 bg-zinc-950">
         <span className="text-xs text-zinc-500 flex-1 truncate flex items-center gap-2 min-w-0">

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type { AiConfig, AiStatus, CompileResult, CompileStatus, FileEntry } from "../types";
 
 export type SidebarTab = "files" | "search" | "logs" | "outline";
@@ -29,6 +30,13 @@ interface AppState {
   tectonicAvailable: boolean;
   sidebarTab: SidebarTab;
   editorJumpLine: number | null;
+  layout: {
+    sidebarWidth: number;
+    editorWidth: number;
+    pdfWidth: number;
+    isSidebarCollapsed: boolean;
+    isPdfCollapsed: boolean;
+  };
 
   // Actions — workspace
   setWorkspace: (dir: string, tree: FileEntry, rootPath?: string | null) => void;
@@ -56,10 +64,13 @@ interface AppState {
   setTectonicAvailable: (v: boolean) => void;
   setSidebarTab: (tab: SidebarTab) => void;
   setEditorJumpLine: (line: number | null) => void;
+  setLayout: (layout: Partial<AppState["layout"]>) => void;
 }
 
-export const useAppStore = create<AppState>((set) => ({
-  workspaceDir: null,
+export const useAppStore = create<AppState>()(
+  persist(
+    (set) => ({
+      workspaceDir: null,
   projectTree: null,
   openFiles: [],
   activeFilePath: null,
@@ -79,6 +90,13 @@ export const useAppStore = create<AppState>((set) => ({
   tectonicAvailable: true,
   sidebarTab: "files",
   editorJumpLine: null,
+  layout: {
+    sidebarWidth: 20,
+    editorWidth: 40,
+    pdfWidth: 40,
+    isSidebarCollapsed: false,
+    isPdfCollapsed: false,
+  },
 
   setWorkspace: (dir, tree, rootPath = null) =>
     set({ workspaceDir: dir, projectTree: tree, rootFilePath: rootPath }),
@@ -117,4 +135,15 @@ export const useAppStore = create<AppState>((set) => ({
   setTectonicAvailable: (v) => set({ tectonicAvailable: v }),
   setSidebarTab: (tab) => set({ sidebarTab: tab }),
   setEditorJumpLine: (line) => set({ editorJumpLine: line }),
-}));
+  setLayout: (layout) =>
+    set((s) => ({ layout: { ...s.layout, ...layout } })),
+    }),
+    {
+      name: "localleaf-storage",
+      partialize: (state) => ({
+        layout: state.layout,
+        aiConfig: state.aiConfig,
+      }),
+    }
+  )
+);
