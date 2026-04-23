@@ -26,6 +26,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             compiler::compile_latex,
             compiler::check_tectonic,
+            compiler::get_tectonic_status,
+            compiler::warm_cache,
             fs_service::read_file,
             fs_service::read_file_bytes,
             fs_service::save_file,

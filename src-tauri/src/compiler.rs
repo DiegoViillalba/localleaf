@@ -133,3 +133,81 @@ pub async fn compile_latex(tex_path: String) -> Result<CompileResult, String> {
 pub fn check_tectonic() -> bool {
     is_tectonic_available()
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TectonicStatus {
+    pub installed: bool,
+    pub version: Option<String>,
+    pub cache_dir: Option<String>,
+    pub bundle_cached: bool,
+}
+
+#[tauri::command]
+pub fn get_tectonic_status() -> Result<TectonicStatus, String> {
+    let installed = is_tectonic_available();
+    let mut version = None;
+    let mut bundle_cached = false;
+    let mut cache_dir = None;
+
+    if installed {
+        if let Ok(output) = Command::new("tectonic").arg("--version").output() {
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                if let Some(v) = stdout.split_whitespace().nth(1) {
+                    version = Some(v.to_string());
+                }
+            }
+        }
+    }
+
+    if let Some(dir) = dirs::cache_dir() {
+        let t_cache = dir.join("Tectonic");
+        cache_dir = Some(t_cache.to_string_lossy().to_string());
+        if t_cache.exists() {
+            // Naive check if there are files in urls directory indicating cached bundles
+            if t_cache.join("urls").exists() || t_cache.join("manifests").exists() {
+                bundle_cached = true;
+            }
+        }
+    }
+
+    Ok(TectonicStatus {
+        installed,
+        version,
+        cache_dir,
+        bundle_cached,
+    })
+}
+
+#[tauri::command]
+pub async fn warm_cache() -> Result<(), String> {
+    if !is_tectonic_available() {
+        return Err("Tectonic no está instalado".to_string());
+    }
+    
+    // We run tectonic on an empty input from stdin.
+    // Tectonic requires at least something, so we pass a minimal valid document.
+    let min_doc = r#"\documentclass{article}\begin{document}warm\end{document}"#;
+    let temp_dir = std::env::temp_dir();
+    
+    let mut child = Command::new("tectonic")
+        .arg("--outdir")
+        .arg(&temp_dir)
+        .arg("-") // read from stdin
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .spawn()
+        .map_err(|e| format!("Failed to spawn tectonic: {}", e))?;
+        
+    if let Some(mut stdin) = child.stdin.take() {
+        use std::io::Write;
+        let _ = stdin.write_all(min_doc.as_bytes());
+    }
+    
+    let _ = tauri::async_runtime::spawn_blocking(move || {
+        child.wait()
+    }).await.map_err(|e| e.to_string())?;
+
+    Ok(())
+}

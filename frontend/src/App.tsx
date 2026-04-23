@@ -11,6 +11,7 @@ import { ErrorPanel } from "./components/ui/ErrorPanel";
 import { StatusBar } from "./components/ui/StatusBar";
 import { TectonicBanner } from "./components/ui/TectonicBanner";
 import { ResizeHandle } from "./components/ui/ResizeHandle";
+import { SettingsModal } from "./components/settings/SettingsModal";
 
 export default function App() {
   const { setTectonicAvailable, layout, setLayout } = useAppStore();
@@ -122,6 +123,9 @@ export default function App() {
       </Group>
 
       <StatusBar />
+
+      {/* Global Modals */}
+      <SettingsModal />
     </div>
   );
 }

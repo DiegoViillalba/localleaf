@@ -13,6 +13,7 @@ interface AppState {
   openFiles: string[];
   activeFilePath: string | null;
   content: string;
+  originalContent: string;
   isDirty: boolean;
 
   // Compilation
@@ -26,10 +27,20 @@ interface AppState {
   aiBuffer: string;
   aiConfig: AiConfig;
 
+  // Settings
+  settings: {
+    latex: {
+      installed: boolean;
+      version?: string;
+      cacheReady: boolean;
+    };
+  };
+
   // UI
   tectonicAvailable: boolean;
   sidebarTab: SidebarTab;
   editorJumpLine: number | null;
+  isSettingsOpen: boolean;
   layout: {
     sidebarWidth: number;
     editorWidth: number;
@@ -64,7 +75,10 @@ interface AppState {
   setTectonicAvailable: (v: boolean) => void;
   setSidebarTab: (tab: SidebarTab) => void;
   setEditorJumpLine: (line: number | null) => void;
+  setIsSettingsOpen: (open: boolean) => void;
   setLayout: (layout: Partial<AppState["layout"]>) => void;
+  setSettings: (settings: Partial<AppState["settings"]>) => void;
+  setLatexSettings: (latex: Partial<AppState["settings"]["latex"]>) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -75,6 +89,7 @@ export const useAppStore = create<AppState>()(
   openFiles: [],
   activeFilePath: null,
   content: "",
+  originalContent: "",
   isDirty: false,
   rootFilePath: null,
   compileStatus: "idle",
@@ -90,12 +105,19 @@ export const useAppStore = create<AppState>()(
   tectonicAvailable: true,
   sidebarTab: "files",
   editorJumpLine: null,
+  isSettingsOpen: false,
   layout: {
     sidebarWidth: 20,
     editorWidth: 40,
     pdfWidth: 40,
     isSidebarCollapsed: false,
     isPdfCollapsed: false,
+  },
+  settings: {
+    latex: {
+      installed: false,
+      cacheReady: false,
+    },
   },
 
   setWorkspace: (dir, tree, rootPath = null) =>
@@ -119,8 +141,16 @@ export const useAppStore = create<AppState>()(
           : s.activeFilePath;
       return { openFiles, activeFilePath };
     }),
-  setContent: (content) => set({ content, isDirty: true }),
-  markClean: () => set({ isDirty: false }),
+  setContent: (content) =>
+    set((s) => ({
+      content,
+      isDirty: content !== s.originalContent,
+    })),
+  markClean: () =>
+    set((s) => ({
+      isDirty: false,
+      originalContent: s.content,
+    })),
 
   setCompileStatus: (status) => set({ compileStatus: status }),
   setCompileResult: (result) => set({ compileResult: result }),
@@ -135,14 +165,22 @@ export const useAppStore = create<AppState>()(
   setTectonicAvailable: (v) => set({ tectonicAvailable: v }),
   setSidebarTab: (tab) => set({ sidebarTab: tab }),
   setEditorJumpLine: (line) => set({ editorJumpLine: line }),
+  setIsSettingsOpen: (open) => set({ isSettingsOpen: open }),
   setLayout: (layout) =>
     set((s) => ({ layout: { ...s.layout, ...layout } })),
+  setSettings: (settings) =>
+    set((s) => ({ settings: { ...s.settings, ...settings } })),
+  setLatexSettings: (latex) =>
+    set((s) => ({
+      settings: { ...s.settings, latex: { ...s.settings.latex, ...latex } },
+    })),
     }),
     {
       name: "localleaf-storage",
       partialize: (state) => ({
         layout: state.layout,
         aiConfig: state.aiConfig,
+        settings: state.settings,
       }),
     }
   )
