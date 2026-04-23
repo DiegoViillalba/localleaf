@@ -3,12 +3,16 @@ import { EditorView, basicSetup } from "codemirror";
 import { EditorState } from "@codemirror/state";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
 import { StreamLanguage } from "@codemirror/language";
+import { autocompletion, acceptCompletion } from "@codemirror/autocomplete";
+import { linter, lintGutter } from "@codemirror/lint";
 import { keymap } from "@codemirror/view";
 import { indentWithTab } from "@codemirror/commands";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { useAppStore } from "../../store/useAppStore";
 import { useCompile } from "../../hooks/useCompile";
 import { useAiAssist } from "../../hooks/useAiAssist";
+import { latexCompletions } from "./latexCompletions";
+import { latexLinter } from "./latexLinter";
 
 interface EditorProps {
   className?: string;
@@ -30,8 +34,12 @@ export function LatexEditor({ className = "" }: EditorProps) {
       extensions: [
         basicSetup,
         StreamLanguage.define(stex),
+        autocompletion({ override: [latexCompletions] }),
+        linter(latexLinter),
+        lintGutter(),
         oneDark,
         keymap.of([
+          { key: "Tab", run: acceptCompletion },
           indentWithTab,
           // Ctrl/Cmd+S → save + compile
           {
