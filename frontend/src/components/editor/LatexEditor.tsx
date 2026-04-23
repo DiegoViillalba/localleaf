@@ -3,6 +3,7 @@ import { EditorView, basicSetup } from "codemirror";
 import { EditorState } from "@codemirror/state";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
 import { StreamLanguage } from "@codemirror/language";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { autocompletion, acceptCompletion } from "@codemirror/autocomplete";
 import { linter, lintGutter } from "@codemirror/lint";
 import { keymap } from "@codemirror/view";
@@ -24,6 +25,9 @@ export function LatexEditor({ className = "" }: EditorProps) {
   const { content, setContent, activeFilePath, rootFilePath, compileStatus, editorJumpLine, setEditorJumpLine } = useAppStore();
   const { compile } = useCompile();
   const { assist, aiStatus } = useAiAssist();
+
+  const isImage = activeFilePath ? /\.(png|jpe?g|gif|webp|svg)$/i.test(activeFilePath) : false;
+  const isPdf = activeFilePath ? /\.pdf$/i.test(activeFilePath) : false;
 
   // Build the editor on mount
   useEffect(() => {
@@ -184,9 +188,31 @@ export function LatexEditor({ className = "" }: EditorProps) {
       {/* CodeMirror */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-hidden"
+        className={`flex-1 overflow-hidden relative ${isImage || isPdf || !activeFilePath ? "hidden" : "block"}`}
         style={{ minHeight: 0 }}
       />
+
+      {/* Image Preview */}
+      {isImage && activeFilePath && (
+        <div className="flex-1 overflow-auto flex items-center justify-center p-4 bg-zinc-900/30">
+          <img 
+            src={convertFileSrc(activeFilePath)} 
+            alt="Vista previa" 
+            className="max-w-full max-h-full object-contain drop-shadow-md rounded" 
+          />
+        </div>
+      )}
+
+      {/* PDF Preview */}
+      {isPdf && activeFilePath && (
+        <div className="flex-1 w-full h-full bg-zinc-900/30">
+          <iframe 
+            src={convertFileSrc(activeFilePath)} 
+            className="w-full h-full border-none"
+            title="PDF Preview"
+          />
+        </div>
+      )}
 
       {/* No file placeholder */}
       {!activeFilePath && (

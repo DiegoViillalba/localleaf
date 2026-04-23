@@ -70,10 +70,26 @@ export function FileItem({
   }, [isRenaming]);
 
   const handleOpen = useCallback(async () => {
-    if (!entry.extension || entry.extension !== "tex") return;
+    if (!entry.extension) return;
+    const ext = entry.extension.toLowerCase();
+    
+    // List of text extensions that can be read safely
+    const textExts = ["tex", "sty", "cls", "bib", "txt", "md", "json", "gitignore"];
+    const mediaExts = ["png", "jpg", "jpeg", "gif", "webp", "svg", "pdf"];
+    
+    if (!textExts.includes(ext) && !mediaExts.includes(ext)) {
+      console.warn("Extensión no soportada:", ext);
+      return;
+    }
+
     try {
-      const content = await readFile(entry.path);
-      openFile(entry.path, content);
+      if (textExts.includes(ext)) {
+        const content = await readFile(entry.path);
+        openFile(entry.path, content);
+      } else {
+        // Media files
+        openFile(entry.path, "");
+      }
     } catch (err) {
       console.error("Error al abrir archivo:", err);
     }
@@ -106,7 +122,7 @@ export function FileItem({
   const indent = depth * 14;
   const isActive = activeFilePath === entry.path;
   const isRoot = rootFilePath === entry.path;
-  const clickable = entry.is_dir || entry.extension === "tex";
+  const clickable = entry.is_dir || entry.extension;
 
   // ── Directory ──
   if (entry.is_dir) {
