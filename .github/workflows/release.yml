@@ -6,6 +6,10 @@ on:
       - "v*"          # Se activa con git tag v0.1.0 && git push --tags
   workflow_dispatch:  # También se puede lanzar manualmente desde GitHub
 
+# Necesario para que GITHUB_TOKEN pueda crear y publicar releases
+permissions:
+  contents: write
+
 jobs:
   # ─────────────────────────────────────────────────────────────────
   # macOS — Apple Silicon (aarch64)
@@ -59,10 +63,10 @@ jobs:
           # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: LocalLeaf ${{ github.ref_name }}
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          releaseName: ${{ github.ref_type == 'tag' && format('LocalLeaf {0}', github.ref_name) || '' }}
           releaseBody: "Ver CHANGELOG para detalles."
-          releaseDraft: true
+          releaseDraft: ${{ github.ref_type == 'tag' }}
           prerelease: false
           args: --target aarch64-apple-darwin
 
@@ -111,10 +115,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: LocalLeaf ${{ github.ref_name }}
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          releaseName: ${{ github.ref_type == 'tag' && format('LocalLeaf {0}', github.ref_name) || '' }}
           releaseBody: "Ver CHANGELOG para detalles."
-          releaseDraft: true
+          releaseDraft: ${{ github.ref_type == 'tag' }}
           prerelease: false
           args: --target x86_64-apple-darwin
 
@@ -163,9 +167,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: LocalLeaf ${{ github.ref_name }}
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          releaseName: ${{ github.ref_type == 'tag' && format('LocalLeaf {0}', github.ref_name) || '' }}
           releaseBody: "Ver CHANGELOG para detalles."
-          releaseDraft: true
+          releaseDraft: ${{ github.ref_type == 'tag' }}
           prerelease: false
           args: --target x86_64-pc-windows-msvc
