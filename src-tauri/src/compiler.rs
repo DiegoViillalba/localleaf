@@ -10,7 +10,9 @@ pub struct CompileResult {
     pub pdf_path: Option<String>,
     pub errors: Vec<serde_json::Value>,
     pub raw_log: String,
+    pub needs_shell_escape: bool,
 }
+
 
 /// Returns a tectonic command, preferring the bundled sidecar and
 /// falling back to whatever `tectonic` is on the system PATH.
@@ -42,7 +44,11 @@ pub fn tectonic_install_instructions() -> String {
 
 /// Compile a .tex file using Tectonic. Returns the path to the generated PDF.
 #[tauri::command]
-pub async fn compile_latex(app: tauri::AppHandle, tex_path: String) -> Result<CompileResult, String> {
+pub async fn compile_latex(
+    app: tauri::AppHandle,
+    tex_path: String,
+    shell_escape: bool,
+) -> Result<CompileResult, String> {
     if !is_tectonic_available(&app).await {
         return Ok(CompileResult {
             success: false,
@@ -53,6 +59,7 @@ pub async fn compile_latex(app: tauri::AppHandle, tex_path: String) -> Result<Co
                 "kind": "error"
             })],
             raw_log: String::new(),
+            needs_shell_escape: false,
         });
     }
 
@@ -62,10 +69,17 @@ pub async fn compile_latex(app: tauri::AppHandle, tex_path: String) -> Result<Co
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_else(|| ".".to_string());
 
-    let output = tectonic_cmd(&app)
+    let mut cmd = tectonic_cmd(&app);
+    cmd = cmd
         .arg("--outdir")
         .arg(&output_dir)
-        .arg("--keep-logs")
+        .arg("--keep-logs");
+
+    if shell_escape {
+        cmd = cmd.arg("--shell-escape");
+    }
+
+    let output = cmd
         .arg(&tex_path)
         // Run from the project directory so \input / \include resolve relative paths correctly
         .current_dir(&output_dir)
@@ -91,8 +105,10 @@ pub async fn compile_latex(app: tauri::AppHandle, tex_path: String) -> Result<Co
             pdf_path: Some(pdf_path),
             errors: vec![],
             raw_log,
+            needs_shell_escape: false,
         })
     } else {
+        let nse = error_parser::detect_shell_escape_needed(&raw_log);
         let parsed = error_parser::parse_latex_log(&raw_log);
         let errors = if parsed.is_empty() {
             let fallback = raw_log
@@ -118,6 +134,7 @@ pub async fn compile_latex(app: tauri::AppHandle, tex_path: String) -> Result<Co
             pdf_path: None,
             errors,
             raw_log,
+            needs_shell_escape: nse,
         })
     }
 }

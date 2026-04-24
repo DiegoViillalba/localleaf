@@ -102,3 +102,16 @@ pub fn format_errors_for_ui(errors: &[ParsedError]) -> Vec<serde_json::Value> {
         })
         .collect()
 }
+
+/// Returns true when the log contains patterns that indicate the document
+/// requires --shell-escape (e.g. the `minted` package).
+pub fn detect_shell_escape_needed(raw: &str) -> bool {
+    let lower = raw.to_lowercase();
+    lower.contains("shell-escape")
+        || lower.contains("shell escape")
+        || lower.contains("package minted error")
+        || lower.contains("minted requires")
+        || (lower.contains("minted") && lower.contains("error"))
+        || lower.contains("you must invoke latex with the -shell-escape flag")
+        || lower.contains("restricted \\write18 enabled")
+}

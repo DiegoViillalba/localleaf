@@ -13,7 +13,9 @@ export interface CompileResult {
   pdf_path?: string;
   errors: LaTeXError[];
   raw_log: string;
+  needs_shell_escape: boolean;
 }
+
 
 export interface LaTeXError {
   line?: number;
@@ -37,3 +39,7 @@ export interface AiRequest {
 export type CompileStatus = "idle" | "compiling" | "success" | "error";
 
 export type AiStatus = "idle" | "streaming" | "done" | "error";
+
+export interface LatexConfig {
+  shellEscape: boolean;
+}

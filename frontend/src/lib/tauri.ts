@@ -4,8 +4,12 @@ import type { AiRequest, CompileResult, FileEntry } from "../types";
 
 // ─── Compiler ─────────────────────────────────────────────────────────────────
 
-export const compileLatex = (texPath: string): Promise<CompileResult> =>
-  invoke("compile_latex", { texPath });
+export const compileLatex = (
+  texPath: string,
+  shellEscape: boolean,
+): Promise<CompileResult> =>
+  invoke("compile_latex", { texPath, shellEscape });
+
 
 export const checkTectonic = (): Promise<boolean> =>
   invoke("check_tectonic");

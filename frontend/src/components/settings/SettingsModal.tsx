@@ -13,7 +13,17 @@ interface TectonicStatus {
 type SettingsView = "main" | "latex" | "ai" | "app";
 
 export function SettingsModal() {
-  const { isSettingsOpen, setIsSettingsOpen, settings, setLatexSettings, aiConfig, setAiConfig } = useAppStore();
+  const {
+    isSettingsOpen,
+    setIsSettingsOpen,
+    settings,
+    setLatexSettings,
+    aiConfig,
+    setAiConfig,
+    latexConfig,
+    setLatexConfig,
+  } = useAppStore();
+
   const [activeView, setActiveView] = useState<SettingsView>("main");
   
   const [loading, setLoading] = useState(false);
@@ -142,6 +152,7 @@ export function SettingsModal() {
   const renderLatexView = () => (
     <div className="flex-1 overflow-y-auto p-4 animate-in slide-in-from-right-4 duration-150">
       <div className="space-y-4">
+        {/* Engine status */}
         <div className="bg-zinc-800/50 rounded-lg overflow-hidden border border-zinc-800 p-3 text-sm space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-zinc-400">Engine</span>
@@ -170,6 +181,82 @@ export function SettingsModal() {
           </div>
         </div>
 
+        {/* Compilation mode */}
+        <div>
+          <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
+            Compilación
+          </h4>
+
+          {/* Safe / Advanced mode selector */}
+          <div className="flex rounded-lg overflow-hidden border border-zinc-700 mb-3">
+            <button
+              id="latex-mode-safe"
+              onClick={() => setLatexConfig({ shellEscape: false })}
+              className={`flex-1 py-1.5 text-xs font-medium transition-colors ${
+                !latexConfig.shellEscape
+                  ? "bg-emerald-600/20 text-emerald-400"
+                  : "bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/50"
+              }`}
+            >
+              🔒 Modo Seguro
+            </button>
+            <button
+              id="latex-mode-advanced"
+              onClick={() => setLatexConfig({ shellEscape: true })}
+              className={`flex-1 py-1.5 text-xs font-medium transition-colors border-l border-zinc-700 ${
+                latexConfig.shellEscape
+                  ? "bg-amber-600/20 text-amber-400"
+                  : "bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/50"
+              }`}
+            >
+              ⚡ Modo Avanzado
+            </button>
+          </div>
+
+          {/* shell-escape toggle */}
+          <div className="bg-zinc-800/50 rounded-lg border border-zinc-800 overflow-hidden">
+            <label
+              htmlFor="toggle-shell-escape"
+              className="flex items-center justify-between px-3 py-2.5 cursor-pointer hover:bg-zinc-700/30 transition-colors"
+            >
+              <div>
+                <p className="text-sm text-zinc-200">Comandos externos (shell-escape)</p>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  Requerido por paquetes como <span className="font-mono text-zinc-400">minted</span>
+                </p>
+              </div>
+              {/* Toggle pill */}
+              <div
+                id="toggle-shell-escape"
+                role="switch"
+                aria-checked={latexConfig.shellEscape}
+                onClick={() => setLatexConfig({ shellEscape: !latexConfig.shellEscape })}
+                className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ml-3 cursor-pointer ${
+                  latexConfig.shellEscape ? "bg-amber-500" : "bg-zinc-600"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
+                    latexConfig.shellEscape ? "translate-x-4" : "translate-x-0"
+                  }`}
+                />
+              </div>
+            </label>
+
+            {/* Security warning — only visible when enabled */}
+            {latexConfig.shellEscape && (
+              <div className="mx-3 mb-3 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-md flex gap-2">
+                <span className="text-amber-400 text-sm flex-shrink-0 mt-px">⚠</span>
+                <p className="text-xs text-amber-300/80 leading-relaxed">
+                  Esto permite que LaTeX ejecute comandos del sistema operativo durante la
+                  compilación. Actívalo solo si tu documento lo requiere y confías en su contenido.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Environment actions */}
         <div className="flex flex-col gap-2">
           <button
             onClick={checkEnvironment}
@@ -189,6 +276,7 @@ export function SettingsModal() {
       </div>
     </div>
   );
+
 
   const renderAiView = () => (
     <div className="flex-1 overflow-y-auto p-4 animate-in slide-in-from-right-4 duration-150">

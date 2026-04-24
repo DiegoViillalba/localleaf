@@ -8,12 +8,14 @@ export function useCompile() {
     rootFilePath,
     content,
     isDirty,
+    latexConfig,
     setCompileStatus,
     setCompileResult,
     setPdfPath,
     markClean,
     setSidebarTab,
   } = useAppStore();
+
 
   const compile = useCallback(async () => {
     // Always flush the active file before compiling
@@ -29,7 +31,8 @@ export function useCompile() {
     setCompileStatus("compiling");
 
     try {
-      const result = await compileLatex(target);
+      const result = await compileLatex(target, latexConfig.shellEscape);
+
       setCompileResult(result);
 
       if (result.success && result.pdf_path) {
@@ -44,7 +47,9 @@ export function useCompile() {
         success: false,
         errors: [{ line: undefined, message: String(err), kind: "error" }],
         raw_log: "",
+        needs_shell_escape: false,
       });
+
       setCompileStatus("error");
       setSidebarTab("logs");
     }
@@ -53,12 +58,14 @@ export function useCompile() {
     rootFilePath,
     content,
     isDirty,
+    latexConfig,
     setCompileStatus,
     setCompileResult,
     setPdfPath,
     markClean,
     setSidebarTab,
   ]);
+
 
   return { compile };
 }

@@ -15,8 +15,16 @@ function kindLabel(kind: LaTeXError["kind"]) {
 }
 
 export function LogsPanel() {
-  const { compileResult, compileStatus, setPendingAiPrompt, setSidebarTab } = useAppStore();
+  const {
+    compileResult,
+    compileStatus,
+    latexConfig,
+    setIsSettingsOpen,
+    setPendingAiPrompt,
+    setSidebarTab,
+  } = useAppStore();
   const [showRaw, setShowRaw] = useState(false);
+
 
   const errors = compileResult?.errors ?? [];
   const hasContent = compileResult !== null;
@@ -114,6 +122,38 @@ export function LogsPanel() {
           <p className="text-xs text-zinc-600 px-4 py-6 text-center">
             Compila un archivo para ver los logs.
           </p>
+        )}
+
+        {/* Smart shell-escape hint */}
+        {compileStatus === "error"
+          && compileResult?.needs_shell_escape
+          && !latexConfig.shellEscape && (
+          <div className="mx-3 mb-3 mt-1 px-3 py-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+            <div className="flex gap-2 items-start">
+              <span className="text-amber-400 text-sm flex-shrink-0">💡</span>
+              <div className="min-w-0">
+                <p className="text-xs text-amber-300 font-medium mb-0.5">
+                  Este documento requiere comandos externos
+                </p>
+                <p className="text-xs text-amber-300/70 leading-relaxed">
+                  Activa{" "}
+                  <span className="font-mono text-amber-300">
+                    "Permitir comandos externos"
+                  </span>{" "}
+                  en Ajustes → LaTeX → Compilación.
+                </p>
+                <button
+                  onClick={() => {
+                    setIsSettingsOpen(true);
+                    setSidebarTab("logs");
+                  }}
+                  className="mt-1.5 text-[10px] text-amber-400 hover:text-amber-300 underline underline-offset-2 transition-colors"
+                >
+                  Ir a Ajustes →
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

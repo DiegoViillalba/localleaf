@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AiConfig, AiStatus, CompileResult, CompileStatus, FileEntry } from "../types";
+import type { AiConfig, AiStatus, CompileResult, CompileStatus, FileEntry, LatexConfig } from "../types";
+
 
 export interface ChatMessage {
   role: "user" | "assistant" | "system";
@@ -42,6 +43,10 @@ interface AppState {
       cacheReady: boolean;
     };
   };
+
+  // Compilation config
+  latexConfig: LatexConfig;
+
 
   // UI
   tectonicAvailable: boolean;
@@ -90,6 +95,7 @@ interface AppState {
   setLayout: (layout: Partial<AppState["layout"]>) => void;
   setSettings: (settings: Partial<AppState["settings"]>) => void;
   setLatexSettings: (latex: Partial<AppState["settings"]["latex"]>) => void;
+  setLatexConfig: (cfg: Partial<LatexConfig>) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -132,6 +138,10 @@ export const useAppStore = create<AppState>()(
       cacheReady: false,
     },
   },
+  latexConfig: {
+    shellEscape: false,
+  },
+
 
   setWorkspace: (dir, tree, rootPath = null) =>
     set({ workspaceDir: dir, projectTree: tree, rootFilePath: rootPath }),
@@ -197,6 +207,9 @@ export const useAppStore = create<AppState>()(
     set((s) => ({
       settings: { ...s.settings, latex: { ...s.settings.latex, ...latex } },
     })),
+  setLatexConfig: (cfg) =>
+    set((s) => ({ latexConfig: { ...s.latexConfig, ...cfg } })),
+
     }),
     {
       name: "localleaf-storage",
@@ -204,7 +217,9 @@ export const useAppStore = create<AppState>()(
         layout: state.layout,
         aiConfig: state.aiConfig,
         settings: state.settings,
+        latexConfig: state.latexConfig,
       }),
+
     }
   )
 );
