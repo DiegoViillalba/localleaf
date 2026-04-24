@@ -12,6 +12,7 @@ export function useCompile() {
     setCompileResult,
     setPdfPath,
     markClean,
+    setSidebarTab,
   } = useAppStore();
 
   const compile = useCallback(async () => {
@@ -36,6 +37,7 @@ export function useCompile() {
         setCompileStatus("success");
       } else {
         setCompileStatus("error");
+        setSidebarTab("logs");
       }
     } catch (err) {
       setCompileResult({
@@ -44,6 +46,7 @@ export function useCompile() {
         raw_log: "",
       });
       setCompileStatus("error");
+      setSidebarTab("logs");
     }
   }, [
     activeFilePath,
@@ -54,6 +57,7 @@ export function useCompile() {
     setCompileResult,
     setPdfPath,
     markClean,
+    setSidebarTab,
   ]);
 
   return { compile };

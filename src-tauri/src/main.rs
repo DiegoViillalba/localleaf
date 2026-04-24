@@ -33,6 +33,7 @@ fn main() {
             fs_service::create_project,
             fs_service::import_files,
             ai_service::stream_ai_assist,
+            ai_service::fetch_available_models,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

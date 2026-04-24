@@ -50,6 +50,17 @@ const TABS: Tab[] = [
       </svg>
     ),
   },
+  {
+    id: "ai",
+    label: "Asistente IA",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
+        <path d="M12 12 2.1 7.1" />
+        <path d="M12 12l9.9 4.9" />
+      </svg>
+    ),
+  },
 ];
 
 export function SidebarToolbar() {

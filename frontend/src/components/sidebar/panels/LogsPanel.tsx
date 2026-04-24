@@ -15,11 +15,28 @@ function kindLabel(kind: LaTeXError["kind"]) {
 }
 
 export function LogsPanel() {
-  const { compileResult, compileStatus } = useAppStore();
+  const { compileResult, compileStatus, setPendingAiPrompt, setSidebarTab } = useAppStore();
   const [showRaw, setShowRaw] = useState(false);
 
   const errors = compileResult?.errors ?? [];
   const hasContent = compileResult !== null;
+
+  const handleFixWithAI = () => {
+    if (!compileResult) return;
+    
+    let prompt = "Tengo los siguientes errores de compilación en mi documento LaTeX:\n\n";
+    if (showRaw) {
+      prompt += `\`\`\`log\n${compileResult.raw_log}\n\`\`\``;
+    } else {
+      errors.forEach(e => {
+        prompt += `- Línea ${e.line ?? '?'}: ${e.message}\n`;
+      });
+    }
+    prompt += "\nPor favor explícame a qué se deben y dame el código para solucionarlos.";
+    
+    setPendingAiPrompt(prompt);
+    setSidebarTab("ai");
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -48,9 +65,22 @@ export function LogsPanel() {
           <span className="text-xs text-emerald-500">✓ Compilado correctamente</span>
         )}
         {compileStatus === "error" && (
-          <span className="text-xs text-red-400">
-            ✕ {errors.length} error{errors.length !== 1 ? "es" : ""}
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-red-400">
+              ✕ {errors.length} error{errors.length !== 1 ? "es" : ""}
+            </span>
+            <button
+              onClick={handleFixWithAI}
+              className="px-2 py-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 text-[10px] font-medium rounded border border-purple-500/20 transition-colors flex items-center gap-1"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
+                <path d="M12 12 2.1 7.1" />
+                <path d="M12 12l9.9 4.9" />
+              </svg>
+              Solucionar con IA
+            </button>
+          </div>
         )}
       </div>
 

@@ -9,18 +9,22 @@ pub struct AiConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct AiRequest {
-    pub config: AiConfig,
-    pub preamble: String,
-    pub selection: String,
-    pub context: String,
+pub struct ChatMessage {
+    pub role: String,
+    pub content: String,
 }
 
-const SYSTEM_PROMPT: &str = r#"Eres un experto en LaTeX.
-Devuelve únicamente código LaTeX válido.
-NO expliques nada.
-Mantén consistencia con \begin y \end.
-Respeta el preámbulo existente."#;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AiRequest {
+    pub config: AiConfig,
+    pub document_context: String,
+    pub messages: Vec<ChatMessage>,
+}
+
+const SYSTEM_PROMPT: &str = r#"Eres un asistente experto en LaTeX.
+Ayuda al usuario a crear, corregir y entender su documento.
+Si proporcionas código, usa bloques Markdown.
+Devuelve respuestas concisas y directas."#;
 
 #[tauri::command]
 pub async fn stream_ai_assist(
@@ -30,13 +34,24 @@ pub async fn stream_ai_assist(
     use futures_util::StreamExt;
     use reqwest::Client;
 
+    let mut payload_messages = vec![
+        serde_json::json!({
+            "role": "system",
+            "content": format!("{}\n\nDOCUMENTO ACTIVO DEL USUARIO:\n```latex\n{}\n```", SYSTEM_PROMPT, request.document_context)
+        })
+    ];
+
+    for msg in &request.messages {
+        payload_messages.push(serde_json::json!({
+            "role": msg.role,
+            "content": msg.content
+        }));
+    }
+
     let body = serde_json::json!({
         "model": request.config.model,
         "stream": true,
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user",   "content": build_user_prompt(&request)}
-        ]
+        "messages": payload_messages
     });
 
     let client = Client::new();
@@ -45,10 +60,13 @@ pub async fn stream_ai_assist(
         request.config.provider_url.trim_end_matches('/')
     );
 
-    let response = client
-        .post(&endpoint)
-        .bearer_auth(&request.config.api_key)
-        .json(&body)
+    let mut req = client.post(&endpoint).json(&body);
+
+    if !request.config.api_key.trim().is_empty() {
+        req = req.bearer_auth(request.config.api_key.trim());
+    }
+
+    let response = req
         .send()
         .await
         .map_err(|e| format!("Error de red: {}", e))?;
@@ -87,9 +105,44 @@ pub async fn stream_ai_assist(
     Ok(())
 }
 
-fn build_user_prompt(req: &AiRequest) -> String {
-    format!(
-        "## Preámbulo\n```latex\n{}\n```\n\n## Contexto\n```latex\n{}\n```\n\n## Selección\n```latex\n{}\n```\n\nMejora o completa la selección manteniendo coherencia con el preámbulo.",
-        req.preamble, req.context, req.selection
-    )
+#[derive(Deserialize)]
+struct ModelsResponse {
+    data: Vec<ModelData>,
+}
+
+#[derive(Deserialize)]
+struct ModelData {
+    id: String,
+}
+
+#[tauri::command]
+pub async fn fetch_available_models(provider_url: String, api_key: String) -> Result<Vec<String>, String> {
+    use reqwest::Client;
+
+    let endpoint = format!("{}/models", provider_url.trim_end_matches('/'));
+    
+    let client = Client::new();
+    let mut req = client.get(&endpoint);
+
+    if !api_key.trim().is_empty() {
+        req = req.bearer_auth(api_key.trim());
+    }
+
+    let response = req.send().await.map_err(|e| format!("Error de red: {}", e))?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let text = response.text().await.unwrap_or_default();
+        return Err(format!("Error {}: {}", status, text));
+    }
+
+    let models_resp: ModelsResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Error parseando JSON: {}", e))?;
+
+    let mut model_names: Vec<String> = models_resp.data.into_iter().map(|m| m.id).collect();
+    model_names.sort();
+    
+    Ok(model_names)
 }

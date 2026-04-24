@@ -2,7 +2,12 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { AiConfig, AiStatus, CompileResult, CompileStatus, FileEntry } from "../types";
 
-export type SidebarTab = "files" | "search" | "logs" | "outline";
+export interface ChatMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+}
+
+export type SidebarTab = "files" | "search" | "logs" | "outline" | "ai";
 
 interface AppState {
   // Workspace
@@ -26,6 +31,8 @@ interface AppState {
   aiStatus: AiStatus;
   aiBuffer: string;
   aiConfig: AiConfig;
+  aiChatMessages: ChatMessage[];
+  pendingAiPrompt: string | null;
 
   // Settings
   settings: {
@@ -70,6 +77,10 @@ interface AppState {
   appendAiToken: (token: string) => void;
   clearAiBuffer: () => void;
   setAiConfig: (config: Partial<AiConfig>) => void;
+  setAiChatMessages: (messages: ChatMessage[]) => void;
+  appendAiChatMessage: (msg: ChatMessage) => void;
+  updateLastAiChatMessage: (content: string) => void;
+  setPendingAiPrompt: (prompt: string | null) => void;
 
   // Actions — UI
   setTectonicAvailable: (v: boolean) => void;
@@ -102,6 +113,8 @@ export const useAppStore = create<AppState>()(
     provider_url: "https://api.openai.com/v1",
     model: "gpt-4o",
   },
+  aiChatMessages: [],
+  pendingAiPrompt: null,
   tectonicAvailable: true,
   sidebarTab: "files",
   editorJumpLine: null,
@@ -161,6 +174,16 @@ export const useAppStore = create<AppState>()(
   clearAiBuffer: () => set({ aiBuffer: "" }),
   setAiConfig: (config) =>
     set((s) => ({ aiConfig: { ...s.aiConfig, ...config } })),
+  setAiChatMessages: (messages) => set({ aiChatMessages: messages }),
+  appendAiChatMessage: (msg) => set((s) => ({ aiChatMessages: [...s.aiChatMessages, msg] })),
+  updateLastAiChatMessage: (content) => set((s) => {
+    const msgs = [...s.aiChatMessages];
+    if (msgs.length > 0 && msgs[msgs.length - 1].role === "assistant") {
+      msgs[msgs.length - 1].content += content;
+    }
+    return { aiChatMessages: msgs };
+  }),
+  setPendingAiPrompt: (prompt) => set({ pendingAiPrompt: prompt }),
 
   setTectonicAvailable: (v) => set({ tectonicAvailable: v }),
   setSidebarTab: (tab) => set({ sidebarTab: tab }),

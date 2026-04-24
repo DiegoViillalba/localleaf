@@ -13,12 +13,16 @@ interface TectonicStatus {
 type SettingsView = "main" | "latex" | "ai" | "app";
 
 export function SettingsModal() {
-  const { isSettingsOpen, setIsSettingsOpen, settings, setLatexSettings } = useAppStore();
+  const { isSettingsOpen, setIsSettingsOpen, settings, setLatexSettings, aiConfig, setAiConfig } = useAppStore();
   const [activeView, setActiveView] = useState<SettingsView>("main");
   
   const [loading, setLoading] = useState(false);
   const [warming, setWarming] = useState(false);
   const [status, setStatus] = useState<TectonicStatus | null>(null);
+  
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [fetchingModels, setFetchingModels] = useState(false);
+  const [modelError, setModelError] = useState<string | null>(null);
 
   const modalRef = useClickOutside<HTMLDivElement>(() => setIsSettingsOpen(false));
 
@@ -186,6 +190,133 @@ export function SettingsModal() {
     </div>
   );
 
+  const renderAiView = () => (
+    <div className="flex-1 overflow-y-auto p-4 animate-in slide-in-from-right-4 duration-150">
+      <div className="space-y-4">
+        
+        {/* Helper Presets */}
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setAiConfig({ provider_url: "https://api.openai.com/v1", model: "gpt-4o" })}
+              className="flex-1 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium rounded transition-colors"
+            >
+              OpenAI
+            </button>
+            <button
+              onClick={() => setAiConfig({ provider_url: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-1.5-pro" })}
+              className="flex-1 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium rounded transition-colors"
+            >
+              Gemini
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setAiConfig({ provider_url: "http://localhost:1234/v1", model: "local-model" })}
+              className="flex-1 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium rounded transition-colors"
+            >
+              LM Studio Local
+            </button>
+            <button
+              onClick={() => setAiConfig({ provider_url: "http://localhost:11434/v1", model: "llama3" })}
+              className="flex-1 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium rounded transition-colors"
+            >
+              Ollama Local
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-1">
+              Provider URL
+            </label>
+            <input
+              type="text"
+              value={aiConfig.provider_url}
+              onChange={(e) => setAiConfig({ provider_url: e.target.value })}
+              className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-sm text-zinc-200 outline-none focus:border-emerald-500 transition-colors"
+              placeholder="https://api.openai.com/v1"
+            />
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-xs font-medium text-zinc-400">
+                Model Name
+              </label>
+              <button
+                onClick={async () => {
+                  setFetchingModels(true);
+                  setModelError(null);
+                  try {
+                    const models = await invoke<string[]>("fetch_available_models", {
+                      providerUrl: aiConfig.provider_url,
+                      apiKey: aiConfig.api_key,
+                    });
+                    setAvailableModels(models);
+                  } catch (err) {
+                    setModelError(String(err));
+                  } finally {
+                    setFetchingModels(false);
+                  }
+                }}
+                disabled={fetchingModels || !aiConfig.provider_url}
+                className="text-[10px] text-emerald-500 hover:text-emerald-400 disabled:opacity-50 transition-colors flex items-center gap-1"
+              >
+                {fetchingModels ? "Cargando..." : "Cargar modelos de la API"}
+              </button>
+            </div>
+            
+            {availableModels.length > 0 ? (
+              <select
+                value={aiConfig.model}
+                onChange={(e) => setAiConfig({ model: e.target.value })}
+                className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-sm text-zinc-200 outline-none focus:border-emerald-500 transition-colors"
+              >
+                <option value="" disabled>Selecciona un modelo...</option>
+                {availableModels.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={aiConfig.model}
+                onChange={(e) => setAiConfig({ model: e.target.value })}
+                className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-sm text-zinc-200 outline-none focus:border-emerald-500 transition-colors"
+                placeholder="gpt-4o"
+              />
+            )}
+            
+            {modelError && (
+              <p className="text-[10px] text-red-500 mt-1">
+                {modelError}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 mb-1">
+              API Key
+            </label>
+            <input
+              type="password"
+              value={aiConfig.api_key}
+              onChange={(e) => setAiConfig({ api_key: e.target.value })}
+              className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-sm text-zinc-200 outline-none focus:border-emerald-500 transition-colors"
+              placeholder="sk-... (Déjalo vacío para APIs locales)"
+            />
+            <p className="text-[10px] text-zinc-500 mt-1">
+              La API Key se guarda localmente en tu sistema. No requerida para LM Studio / Ollama.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-150">
       <div
@@ -224,7 +355,8 @@ export function SettingsModal() {
         {/* Content */}
         {activeView === "main" && renderMainView()}
         {activeView === "latex" && renderLatexView()}
-        {(activeView === "ai" || activeView === "app") && (
+        {activeView === "ai" && renderAiView()}
+        {activeView === "app" && (
           <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm animate-in slide-in-from-right-4 duration-150">
             Próximamente
           </div>
