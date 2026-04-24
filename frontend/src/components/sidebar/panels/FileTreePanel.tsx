@@ -1,4 +1,6 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { invoke } from "@tauri-apps/api/core";
 import {
   createFile,
   createFolder,
@@ -74,6 +76,7 @@ export function FileTreePanel() {
 
   const [newItemType, setNewItemType] = useState<NewItemType>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   // Refresh the tree from disk
   const refresh = useCallback(async () => {
@@ -116,6 +119,35 @@ export function FileTreePanel() {
     },
     [newItemType, workspaceDir, refresh, openFile]
   );
+
+  // Tauri native drag and drop
+  useEffect(() => {
+    if (!workspaceDir) return;
+
+    let unlisten: (() => void) | undefined;
+
+    getCurrentWebview().onDragDropEvent((event) => {
+      if (event.payload.type === "enter" || event.payload.type === "over") {
+        setIsDraggingOver(true);
+      } else if (event.payload.type === "leave") {
+        setIsDraggingOver(false);
+      } else if (event.payload.type === "drop") {
+        setIsDraggingOver(false);
+        const paths = event.payload.paths;
+        if (paths && paths.length > 0) {
+          invoke("import_files", { sourcePaths: paths, destDir: workspaceDir })
+            .then(() => refresh())
+            .catch((err) => setError(String(err)));
+        }
+      }
+    }).then((fn) => {
+      unlisten = fn;
+    });
+
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, [workspaceDir, refresh]);
 
   const treeChildren = projectTree?.children ?? [];
   const folderName = workspaceDir
@@ -231,6 +263,20 @@ export function FileTreePanel() {
               onRefresh={refresh}
             />
           ))
+        )}
+
+        {/* Drag and Drop Overlay */}
+        {isDraggingOver && workspaceDir && (
+          <div className="absolute inset-0 z-50 bg-zinc-900/80 backdrop-blur-sm border-2 border-dashed border-emerald-500 m-2 rounded-lg flex items-center justify-center pointer-events-none transition-all">
+            <div className="flex flex-col items-center text-emerald-400">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              <span className="text-sm font-medium">Soltar para importar</span>
+            </div>
+          </div>
         )}
       </div>
     </div>

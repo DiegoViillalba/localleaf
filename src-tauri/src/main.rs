@@ -31,6 +31,7 @@ fn main() {
             fs_service::delete_entry,
             fs_service::open_folder_dialog,
             fs_service::create_project,
+            fs_service::import_files,
             ai_service::stream_ai_assist,
         ])
         .run(tauri::generate_context!())

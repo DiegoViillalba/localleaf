@@ -252,3 +252,30 @@ pub async fn open_folder_dialog(app_handle: tauri::AppHandle) -> Result<Option<S
     let path = app_handle.dialog().file().blocking_pick_folder();
     Ok(path.map(|p| p.to_string()))
 }
+
+#[tauri::command]
+pub fn import_files(source_paths: Vec<String>, dest_dir: String) -> Result<(), String> {
+    let dest_path = Path::new(&dest_dir);
+    if !dest_path.exists() {
+        return Err(format!("El directorio destino '{}' no existe.", dest_dir));
+    }
+
+    for source in source_paths {
+        let src_path = Path::new(&source);
+        if !src_path.exists() {
+            continue; // Ignore non-existent files
+        }
+
+        if let Some(file_name) = src_path.file_name() {
+            let target_path = dest_path.join(file_name);
+            
+            // Only copy files, not directories (for simplicity, we don't handle recursive folder drop yet)
+            if src_path.is_file() {
+                fs::copy(&src_path, &target_path)
+                    .map_err(|e| format!("Error al copiar '{}': {}", file_name.to_string_lossy(), e))?;
+            }
+        }
+    }
+
+    Ok(())
+}
