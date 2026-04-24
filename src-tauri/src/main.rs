@@ -12,15 +12,7 @@ fn main() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
-        .setup(|app| {
-            if !compiler::is_tectonic_available() {
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.emit(
-                        "tectonic-missing",
-                        compiler::tectonic_install_instructions(),
-                    );
-                }
-            }
+        .setup(|_app| {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
