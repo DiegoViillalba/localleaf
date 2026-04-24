@@ -22,6 +22,8 @@ export function SettingsModal() {
     setAiConfig,
     latexConfig,
     setLatexConfig,
+    editorConfig,
+    setEditorConfig,
   } = useAppStore();
 
   const [activeView, setActiveView] = useState<SettingsView>("main");
@@ -139,6 +141,24 @@ export function SettingsModal() {
                 </svg>
               </span>
               <span className="text-sm text-zinc-200">IA / Asistente</span>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-500">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => setActiveView("app")}
+            className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-700/50 transition-colors text-left"
+          >
+            <div className="flex items-center gap-3">
+              <span className="w-6 h-6 flex items-center justify-center bg-orange-500/10 text-orange-500 rounded">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+              </span>
+              <span className="text-sm text-zinc-200">Editor</span>
             </div>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-500">
               <polyline points="9 18 15 12 9 6" />
@@ -427,7 +447,7 @@ export function SettingsModal() {
             {activeView === "main" && "Configuración Global"}
             {activeView === "latex" && "Entorno LaTeX"}
             {activeView === "ai" && "Inteligencia Artificial"}
-            {activeView === "app" && "Aplicación"}
+            {activeView === "app" && "Editor"}
           </h2>
           <button
             onClick={() => setIsSettingsOpen(false)}
@@ -445,8 +465,153 @@ export function SettingsModal() {
         {activeView === "latex" && renderLatexView()}
         {activeView === "ai" && renderAiView()}
         {activeView === "app" && (
-          <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm animate-in slide-in-from-right-4 duration-150">
-            Próximamente
+          <div className="flex-1 overflow-y-auto p-4 animate-in slide-in-from-right-4 duration-150">
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
+                  Editor de Código
+                </h4>
+                
+                <div className="bg-zinc-800/50 rounded-lg border border-zinc-800 overflow-hidden">
+                  <label
+                    htmlFor="toggle-code-folding"
+                    className="flex items-center justify-between px-3 py-2.5 cursor-pointer hover:bg-zinc-700/30 transition-colors border-b border-zinc-800"
+                  >
+                    <div>
+                      <p className="text-sm text-zinc-200">Plegado de código (Code Folding)</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">
+                        Permite ocultar y mostrar bloques de código en el margen izquierdo.
+                      </p>
+                    </div>
+                    <div
+                      id="toggle-code-folding"
+                      role="switch"
+                      aria-checked={editorConfig.codeFolding}
+                      onClick={() => setEditorConfig({ codeFolding: !editorConfig.codeFolding })}
+                      className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ml-3 cursor-pointer ${
+                        editorConfig.codeFolding ? "bg-emerald-500" : "bg-zinc-600"
+                      }`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${editorConfig.codeFolding ? "translate-x-4" : "translate-x-0"}`} />
+                    </div>
+                  </label>
+
+                  <label
+                    htmlFor="toggle-word-wrap"
+                    className="flex items-center justify-between px-3 py-2.5 cursor-pointer hover:bg-zinc-700/30 transition-colors border-b border-zinc-800"
+                  >
+                    <div>
+                      <p className="text-sm text-zinc-200">Ajuste de línea (Word Wrap)</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">Ajusta el texto largo al ancho del editor.</p>
+                    </div>
+                    <div
+                      id="toggle-word-wrap"
+                      role="switch"
+                      aria-checked={editorConfig.wordWrap}
+                      onClick={() => setEditorConfig({ wordWrap: !editorConfig.wordWrap })}
+                      className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ml-3 cursor-pointer ${editorConfig.wordWrap ? "bg-emerald-500" : "bg-zinc-600"}`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${editorConfig.wordWrap ? "translate-x-4" : "translate-x-0"}`} />
+                    </div>
+                  </label>
+
+                  <label
+                    htmlFor="toggle-line-numbers"
+                    className="flex items-center justify-between px-3 py-2.5 cursor-pointer hover:bg-zinc-700/30 transition-colors border-b border-zinc-800"
+                  >
+                    <div>
+                      <p className="text-sm text-zinc-200">Números de línea</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">Muestra los números de línea en el margen.</p>
+                    </div>
+                    <div
+                      id="toggle-line-numbers"
+                      role="switch"
+                      aria-checked={editorConfig.lineNumbers}
+                      onClick={() => setEditorConfig({ lineNumbers: !editorConfig.lineNumbers })}
+                      className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ml-3 cursor-pointer ${editorConfig.lineNumbers ? "bg-emerald-500" : "bg-zinc-600"}`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${editorConfig.lineNumbers ? "translate-x-4" : "translate-x-0"}`} />
+                    </div>
+                  </label>
+
+                  <label
+                    htmlFor="toggle-highlight-line"
+                    className="flex items-center justify-between px-3 py-2.5 cursor-pointer hover:bg-zinc-700/30 transition-colors border-b border-zinc-800"
+                  >
+                    <div>
+                      <p className="text-sm text-zinc-200">Resaltar línea actual</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">Destaca el fondo de la línea donde está el cursor.</p>
+                    </div>
+                    <div
+                      id="toggle-highlight-line"
+                      role="switch"
+                      aria-checked={editorConfig.highlightActiveLine}
+                      onClick={() => setEditorConfig({ highlightActiveLine: !editorConfig.highlightActiveLine })}
+                      className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ml-3 cursor-pointer ${editorConfig.highlightActiveLine ? "bg-emerald-500" : "bg-zinc-600"}`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${editorConfig.highlightActiveLine ? "translate-x-4" : "translate-x-0"}`} />
+                    </div>
+                  </label>
+
+                  <label
+                    htmlFor="toggle-match-brackets"
+                    className="flex items-center justify-between px-3 py-2.5 cursor-pointer hover:bg-zinc-700/30 transition-colors border-b border-zinc-800"
+                  >
+                    <div>
+                      <p className="text-sm text-zinc-200">Emparejar corchetes (Brackets)</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">Resalta y cierra automáticamente corchetes y paréntesis.</p>
+                    </div>
+                    <div
+                      id="toggle-match-brackets"
+                      role="switch"
+                      aria-checked={editorConfig.matchBrackets}
+                      onClick={() => setEditorConfig({ matchBrackets: !editorConfig.matchBrackets })}
+                      className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ml-3 cursor-pointer ${editorConfig.matchBrackets ? "bg-emerald-500" : "bg-zinc-600"}`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${editorConfig.matchBrackets ? "translate-x-4" : "translate-x-0"}`} />
+                    </div>
+                  </label>
+
+                  <label
+                    htmlFor="toggle-autocomplete"
+                    className="flex items-center justify-between px-3 py-2.5 cursor-pointer hover:bg-zinc-700/30 transition-colors border-b border-zinc-800"
+                  >
+                    <div>
+                      <p className="text-sm text-zinc-200">Autocompletado y Snippets</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">Sugerencias automáticas y fragmentos de código LaTeX.</p>
+                    </div>
+                    <div
+                      id="toggle-autocomplete"
+                      role="switch"
+                      aria-checked={editorConfig.autoComplete}
+                      onClick={() => setEditorConfig({ autoComplete: !editorConfig.autoComplete })}
+                      className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ml-3 cursor-pointer ${editorConfig.autoComplete ? "bg-emerald-500" : "bg-zinc-600"}`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${editorConfig.autoComplete ? "translate-x-4" : "translate-x-0"}`} />
+                    </div>
+                  </label>
+
+                  <label
+                    htmlFor="toggle-spellcheck"
+                    className="flex items-center justify-between px-3 py-2.5 cursor-pointer hover:bg-zinc-700/30 transition-colors"
+                  >
+                    <div>
+                      <p className="text-sm text-zinc-200">Corrector ortográfico</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">Habilita el corrector nativo del sistema operativo.</p>
+                    </div>
+                    <div
+                      id="toggle-spellcheck"
+                      role="switch"
+                      aria-checked={editorConfig.spellCheck}
+                      onClick={() => setEditorConfig({ spellCheck: !editorConfig.spellCheck })}
+                      className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ml-3 cursor-pointer ${editorConfig.spellCheck ? "bg-emerald-500" : "bg-zinc-600"}`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${editorConfig.spellCheck ? "translate-x-4" : "translate-x-0"}`} />
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

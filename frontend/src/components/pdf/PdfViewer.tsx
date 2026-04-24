@@ -45,7 +45,7 @@ export function PdfViewer() {
 
         docRef.current = pdf;
         setPageCount(pdf.numPages);
-        setCurrentPage(1);
+        setCurrentPage((prev) => Math.min(prev, pdf.numPages) || 1);
         setDocVersion((v) => v + 1);
       } catch (err) {
         if (!cancelled) {

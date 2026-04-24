@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AiConfig, AiStatus, CompileResult, CompileStatus, FileEntry, LatexConfig } from "../types";
+import type { AiConfig, AiStatus, CompileResult, CompileStatus, FileEntry, LatexConfig, EditorConfig } from "../types";
 
 
 export interface ChatMessage {
@@ -47,6 +47,8 @@ interface AppState {
   // Compilation config
   latexConfig: LatexConfig;
 
+  // Editor config
+  editorConfig: EditorConfig;
 
   // UI
   tectonicAvailable: boolean;
@@ -96,6 +98,7 @@ interface AppState {
   setSettings: (settings: Partial<AppState["settings"]>) => void;
   setLatexSettings: (latex: Partial<AppState["settings"]["latex"]>) => void;
   setLatexConfig: (cfg: Partial<LatexConfig>) => void;
+  setEditorConfig: (cfg: Partial<EditorConfig>) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -141,7 +144,15 @@ export const useAppStore = create<AppState>()(
   latexConfig: {
     shellEscape: false,
   },
-
+  editorConfig: {
+    codeFolding: true,
+    wordWrap: true,
+    lineNumbers: true,
+    highlightActiveLine: true,
+    matchBrackets: true,
+    autoComplete: true,
+    spellCheck: false,
+  },
 
   setWorkspace: (dir, tree, rootPath = null) =>
     set({ workspaceDir: dir, projectTree: tree, rootFilePath: rootPath }),
@@ -209,6 +220,8 @@ export const useAppStore = create<AppState>()(
     })),
   setLatexConfig: (cfg) =>
     set((s) => ({ latexConfig: { ...s.latexConfig, ...cfg } })),
+  setEditorConfig: (cfg) =>
+    set((s) => ({ editorConfig: { ...s.editorConfig, ...cfg } })),
 
     }),
     {
@@ -218,6 +231,7 @@ export const useAppStore = create<AppState>()(
         aiConfig: state.aiConfig,
         settings: state.settings,
         latexConfig: state.latexConfig,
+        editorConfig: state.editorConfig,
       }),
 
     }

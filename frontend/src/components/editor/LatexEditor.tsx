@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef } from "react";
-import { EditorView, basicSetup } from "codemirror";
-import { EditorState } from "@codemirror/state";
+import { EditorView } from "codemirror";
+import { EditorState, Compartment, StateEffect } from "@codemirror/state";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
-import { StreamLanguage } from "@codemirror/language";
+import { StreamLanguage, foldGutter, indentOnInput, syntaxHighlighting, defaultHighlightStyle, bracketMatching, foldKeymap } from "@codemirror/language";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { autocompletion, acceptCompletion } from "@codemirror/autocomplete";
-import { linter, lintGutter } from "@codemirror/lint";
-import { keymap } from "@codemirror/view";
-import { indentWithTab } from "@codemirror/commands";
+import { autocompletion, acceptCompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from "@codemirror/autocomplete";
+import { linter, lintGutter, lintKeymap } from "@codemirror/lint";
+import { keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine } from "@codemirror/view";
+import { indentWithTab, toggleComment, history, defaultKeymap, historyKeymap } from "@codemirror/commands";
+import { highlightSelectionMatches, searchKeymap } from "@codemirror/search";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { useAppStore } from "../../store/useAppStore";
 import { useCompile } from "../../hooks/useCompile";
@@ -22,12 +23,37 @@ interface EditorProps {
 export function LatexEditor({ className = "" }: EditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const { content, setContent, activeFilePath, rootFilePath, compileStatus, editorJumpLine, setEditorJumpLine } = useAppStore();
+  const configCompartment = useRef(new Compartment());
+  const { content, setContent, activeFilePath, rootFilePath, compileStatus, editorJumpLine, setEditorJumpLine, editorConfig } = useAppStore();
   const { compile } = useCompile();
   const { assist, aiStatus } = useAiAssist();
 
   const isImage = activeFilePath ? /\.(png|jpe?g|gif|webp|svg)$/i.test(activeFilePath) : false;
   const isPdf = activeFilePath ? /\.pdf$/i.test(activeFilePath) : false;
+
+  const getConfigExtensions = useCallback((cfg: typeof editorConfig) => {
+    const exts = [];
+    if (cfg.lineNumbers) {
+      exts.push(lineNumbers(), highlightActiveLineGutter());
+    }
+    if (cfg.codeFolding) {
+      exts.push(foldGutter());
+    }
+    if (cfg.highlightActiveLine) {
+      exts.push(highlightActiveLine());
+    }
+    if (cfg.matchBrackets) {
+      exts.push(bracketMatching(), closeBrackets());
+    }
+    if (cfg.autoComplete) {
+      exts.push(autocompletion({ override: [latexCompletions] }));
+    }
+    if (cfg.wordWrap) {
+      exts.push(EditorView.lineWrapping);
+    }
+    exts.push(EditorView.contentAttributes.of({ spellcheck: cfg.spellCheck ? "true" : "false" }));
+    return exts;
+  }, []);
 
   // Build the editor on mount
   useEffect(() => {
@@ -36,9 +62,31 @@ export function LatexEditor({ className = "" }: EditorProps) {
     const startState = EditorState.create({
       doc: content,
       extensions: [
-        basicSetup,
+        // Base Setup (Static)
+        highlightSpecialChars(),
+        history(),
+        drawSelection(),
+        dropCursor(),
+        EditorState.allowMultipleSelections.of(true),
+        indentOnInput(),
+        syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+        rectangularSelection(),
+        crosshairCursor(),
+        highlightSelectionMatches(),
+        keymap.of([
+          ...closeBracketsKeymap,
+          ...defaultKeymap,
+          ...searchKeymap,
+          ...historyKeymap,
+          ...foldKeymap,
+          ...completionKeymap,
+          ...lintKeymap
+        ]),
+
+        // Dynamic Config via Compartment
+        configCompartment.current.of(getConfigExtensions(editorConfig)),
+
         StreamLanguage.define(stex),
-        autocompletion({ override: [latexCompletions] }),
         linter(latexLinter),
         lintGutter(),
         oneDark,
@@ -60,6 +108,11 @@ export function LatexEditor({ className = "" }: EditorProps) {
               compile();
               return true;
             },
+          },
+          // Toggle Comment
+          {
+            key: "Mod-/",
+            run: toggleComment,
           },
         ]),
         EditorView.updateListener.of((update) => {
@@ -88,6 +141,15 @@ export function LatexEditor({ className = "" }: EditorProps) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Update editor configuration when settings change
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: configCompartment.current.reconfigure(getConfigExtensions(editorConfig))
+    });
+  }, [editorConfig, getConfigExtensions]);
 
   // When a new file is opened, replace editor content
   useEffect(() => {

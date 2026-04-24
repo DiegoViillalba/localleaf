@@ -43,3 +43,14 @@ export type AiStatus = "idle" | "streaming" | "done" | "error";
 export interface LatexConfig {
   shellEscape: boolean;
 }
+
+export interface EditorConfig {
+  codeFolding: boolean;
+  wordWrap: boolean;
+  lineNumbers: boolean;
+  highlightActiveLine: boolean;
+  matchBrackets: boolean;
+  autoComplete: boolean;
+  spellCheck: boolean;
+}
+
