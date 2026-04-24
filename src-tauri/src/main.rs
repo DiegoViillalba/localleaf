@@ -12,7 +12,19 @@ fn main() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
-        .setup(|_app| {
+        .setup(|app| {
+            // Notify the frontend if Tectonic is missing so the banner shows immediately
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                if !compiler::is_tectonic_available(&handle).await {
+                    if let Some(window) = handle.get_webview_window("main") {
+                        let _ = window.emit(
+                            "tectonic-missing",
+                            compiler::tectonic_install_instructions(),
+                        );
+                    }
+                }
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

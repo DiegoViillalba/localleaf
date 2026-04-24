@@ -5,10 +5,11 @@ pub struct ParsedError {
     pub kind: ErrorKind,
 }
 
+#[allow(dead_code)]
 pub enum ErrorKind {
     Error,
     Warning,
-    Info,
+    Info, // reserved for future use
 }
 
 pub fn parse_latex_log(raw: &str) -> Vec<ParsedError> {
