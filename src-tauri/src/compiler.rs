@@ -2,7 +2,15 @@ use tauri_plugin_shell::ShellExt;
 
 use serde::{Deserialize, Serialize};
 
+use tauri_plugin_shell::process::CommandChild;
+use std::sync::Mutex;
+use std::collections::HashMap;
+
 use crate::error_parser;
+
+pub struct CompileState {
+    pub active_processes: Mutex<HashMap<String, CommandChild>>,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CompileResult {
@@ -46,8 +54,10 @@ pub fn tectonic_install_instructions() -> String {
 #[tauri::command]
 pub async fn compile_latex(
     app: tauri::AppHandle,
+    state: tauri::State<'_, CompileState>,
     tex_path: String,
     shell_escape: bool,
+    compile_id: Option<String>,
 ) -> Result<CompileResult, String> {
     if !is_tectonic_available(&app).await {
         return Ok(CompileResult {
@@ -79,21 +89,45 @@ pub async fn compile_latex(
         cmd = cmd.arg("--shell-escape");
     }
 
-    let output = cmd
+    let (mut rx, child) = cmd
         .arg(&tex_path)
-        // Run from the project directory so \input / \include resolve relative paths correctly
         .current_dir(&output_dir)
-        .output()
-        .await
+        .spawn()
         .map_err(|e| e.to_string())?;
+
+    if let Some(ref cid) = compile_id {
+        if let Ok(mut map) = state.active_processes.lock() {
+            map.insert(cid.clone(), child);
+        }
+    }
+
+    let mut stdout_buf = Vec::new();
+    let mut stderr_buf = Vec::new();
+    let mut exit_code = None;
+
+    while let Some(event) = rx.recv().await {
+        match event {
+            tauri_plugin_shell::process::CommandEvent::Stdout(data) => stdout_buf.extend(data),
+            tauri_plugin_shell::process::CommandEvent::Stderr(data) => stderr_buf.extend(data),
+            tauri_plugin_shell::process::CommandEvent::Terminated(payload) => exit_code = payload.code,
+            tauri_plugin_shell::process::CommandEvent::Error(err) => stderr_buf.extend(err.into_bytes()),
+            _ => {}
+        }
+    }
+
+    if let Some(ref cid) = compile_id {
+        if let Ok(mut map) = state.active_processes.lock() {
+            map.remove(cid);
+        }
+    }
 
     let raw_log = format!(
         "{}\n{}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
+        String::from_utf8_lossy(&stdout_buf),
+        String::from_utf8_lossy(&stderr_buf)
     );
 
-    if output.status.success() {
+    if exit_code == Some(0) {
         let stem = path
             .file_stem()
             .map(|s| s.to_string_lossy().to_string())
@@ -142,6 +176,15 @@ pub async fn compile_latex(
 #[tauri::command]
 pub async fn check_tectonic(app: tauri::AppHandle) -> bool {
     is_tectonic_available(&app).await
+}
+
+#[tauri::command]
+pub fn cancel_compilation(state: tauri::State<'_, CompileState>, compile_id: String) {
+    if let Ok(mut map) = state.active_processes.lock() {
+        if let Some(child) = map.remove(&compile_id) {
+            let _ = child.kill();
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

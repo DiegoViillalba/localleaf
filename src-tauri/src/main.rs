@@ -16,6 +16,9 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             app.manage(window_manager::ProjectWindows::new());
+            app.manage(compiler::CompileState {
+                active_processes: std::sync::Mutex::new(std::collections::HashMap::new()),
+            });
             
             // Notify the frontend if Tectonic is missing so the banner shows immediately
             let handle = app.handle().clone();
@@ -33,6 +36,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             compiler::compile_latex,
+            compiler::cancel_compilation,
             compiler::check_tectonic,
             compiler::get_tectonic_status,
             compiler::warm_cache,
