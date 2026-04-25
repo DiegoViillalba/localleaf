@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tauri::AppHandle;
-use tauri_plugin_shell::ShellExt;
+use tokio::process::Command;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GitCommitInfo {
@@ -19,14 +19,11 @@ pub struct GitStatusResult {
 }
 
 async fn run_git_sidecar(
-    app: &AppHandle,
+    _app: &AppHandle,
     args: &[&str],
     cwd: &str,
 ) -> Result<String, String> {
-    let output = app
-        .shell()
-        .sidecar("git")
-        .map_err(|e| format!("Failed to create git sidecar: {}", e))?
+    let output = Command::new("git")
         .args(args)
         .current_dir(cwd)
         .output()
@@ -48,14 +45,11 @@ async fn run_git_sidecar(
 
 // Special runner for status codes where exit code 1 is expected
 async fn run_git_sidecar_status(
-    app: &AppHandle,
+    _app: &AppHandle,
     args: &[&str],
     cwd: &str,
 ) -> Result<(i32, String, String), String> {
-    let output = app
-        .shell()
-        .sidecar("git")
-        .map_err(|e| format!("Failed to create git sidecar: {}", e))?
+    let output = Command::new("git")
         .args(args)
         .current_dir(cwd)
         .output()
