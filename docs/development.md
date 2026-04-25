@@ -39,13 +39,17 @@ Esto lanza:
 
 > **Nota:** En dev, Tectonic se busca en el PATH del sistema. Asegúrate de tener `tectonic --version` funcionando. El sidecar empaquetado solo se usa en producción.
 
-### Build de producción
+### Build de producción (Compilación Manual)
+
+Para generar una nueva versión empaquetada (App de macOS, ejecutable de Windows, etc.), puedes compilar el proyecto manualmente ejecutando:
 
 ```bash
 cargo tauri build
 ```
 
-El binario final aparece en `src-tauri/target/release/bundle/`.
+**Nota:** La primera vez que compiles puede tardar varios minutos ya que descargará y compilará todas las dependencias de Rust y empaquetará el frontend.
+
+El binario final (junto con el instalador `.dmg` si estás en macOS o `.msi`/`.exe` en Windows) aparecerá en `src-tauri/target/release/bundle/`.
 
 ---
 
