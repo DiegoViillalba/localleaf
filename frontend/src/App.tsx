@@ -17,12 +17,24 @@ import { ResizeHandle } from "./components/ui/ResizeHandle";
 import { SettingsModal } from "./components/settings/SettingsModal";
 import { DiffViewer } from "./components/editor/DiffViewer";
 import { detectRoot } from "./components/sidebar/panels/FileTreePanel";
+import { applyCustomTheme, removeCustomTheme } from "./lib/theme";
 
 export default function App() {
-  const { setTectonicAvailable, layout, setLayout, diffViewer, setDiffViewer, workspaceDir, setWorkspace } = useAppStore();
+  const { setTectonicAvailable, layout, setLayout, diffViewer, setDiffViewer, workspaceDir, setWorkspace, appTheme, customThemeColor } = useAppStore();
   const { compile } = useCompile();
   const sidebarRef = useRef<PanelImperativeHandle>(null);
   const pdfRef = useRef<PanelImperativeHandle>(null);
+
+  // Theme Management
+  useEffect(() => {
+    document.body.className = `theme-${appTheme}`;
+    
+    if (appTheme === "custom") {
+      applyCustomTheme(customThemeColor);
+    } else {
+      removeCustomTheme();
+    }
+  }, [appTheme, customThemeColor]);
 
   // Global Keyboard Shortcuts
   useEffect(() => {

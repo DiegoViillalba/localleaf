@@ -50,6 +50,10 @@ interface AppState {
   // Editor config
   editorConfig: EditorConfig;
 
+  // Theme config
+  appTheme: "dark" | "light" | "custom";
+  customThemeColor: string;
+
   // Git config
   gitConfig: GitConfig;
 
@@ -112,6 +116,8 @@ interface AppState {
   setLatexConfig: (cfg: Partial<LatexConfig>) => void;
   setEditorConfig: (cfg: Partial<EditorConfig>) => void;
   setGitConfig: (cfg: Partial<GitConfig>) => void;
+  setAppTheme: (theme: AppState["appTheme"]) => void;
+  setCustomThemeColor: (color: string) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -167,6 +173,8 @@ export const useAppStore = create<AppState>()(
     autoComplete: true,
     spellCheck: false,
   },
+  appTheme: "dark",
+  customThemeColor: "#3b82f6", // Default custom color (blue)
   gitConfig: {
     intervalMinutes: 5,
     repoUrl: "",
@@ -245,6 +253,8 @@ export const useAppStore = create<AppState>()(
     set((s) => ({ editorConfig: { ...s.editorConfig, ...cfg } })),
   setGitConfig: (cfg) =>
     set((s) => ({ gitConfig: { ...s.gitConfig, ...cfg } })),
+  setAppTheme: (theme) => set({ appTheme: theme }),
+  setCustomThemeColor: (color) => set({ customThemeColor: color }),
 
     }),
     {
@@ -256,6 +266,8 @@ export const useAppStore = create<AppState>()(
         latexConfig: state.latexConfig,
         editorConfig: state.editorConfig,
         gitConfig: state.gitConfig,
+        appTheme: state.appTheme,
+        customThemeColor: state.customThemeColor,
       }),
 
     }

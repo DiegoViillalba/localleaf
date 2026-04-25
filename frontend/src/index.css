@@ -2,6 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+:root, body.theme-dark {
+  --theme-50: #fafafa;
+  --theme-100: #f4f4f5;
+  --theme-200: #e4e4e7;
+  --theme-300: #d4d4d8;
+  --theme-400: #a1a1aa;
+  --theme-500: #71717a;
+  --theme-600: #52525b;
+  --theme-700: #3f3f46;
+  --theme-800: #27272a;
+  --theme-900: #18181b;
+  --theme-950: #09090b;
+}
+
+body.theme-light {
+  /* Inverted scale for light theme */
+  --theme-950: #ffffff;
+  --theme-900: #f4f4f5;
+  --theme-800: #e4e4e7;
+  --theme-700: #d4d4d8;
+  --theme-600: #a1a1aa;
+  --theme-500: #71717a;
+  --theme-400: #52525b;
+  --theme-300: #3f3f46;
+  --theme-200: #27272a;
+  --theme-100: #18181b;
+  --theme-50: #09090b;
+}
+
 /* ── Custom scrollbars ── */
 ::-webkit-scrollbar {
   width: 6px;
@@ -11,11 +40,11 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: var(--theme-700);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
+  background: var(--theme-600);
 }
 
 /* ── Base reset ── */
@@ -34,10 +63,11 @@ body,
 }
 
 body {
-  background: #09090b;
-  color: #e4e4e7;
+  background: var(--theme-950);
+  color: var(--theme-200);
   font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* ── CodeMirror overrides ── */

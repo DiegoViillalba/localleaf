@@ -10,7 +10,7 @@ interface TectonicStatus {
   bundle_cached: boolean;
 }
 
-type SettingsView = "main" | "latex" | "ai" | "app" | "git";
+type SettingsView = "main" | "latex" | "ai" | "app" | "git" | "appearance";
 
 export function SettingsModal() {
   const {
@@ -26,6 +26,10 @@ export function SettingsModal() {
     setEditorConfig,
     gitConfig,
     setGitConfig,
+    appTheme,
+    setAppTheme,
+    customThemeColor,
+    setCustomThemeColor,
   } = useAppStore();
 
   const [activeView, setActiveView] = useState<SettingsView>("main");
@@ -124,6 +128,23 @@ export function SettingsModal() {
                 </svg>
               </span>
               <span className="text-sm text-zinc-200">App</span>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-500">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => setActiveView("appearance")}
+            className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-700/50 transition-colors text-left border-b border-zinc-800"
+          >
+            <div className="flex items-center gap-3">
+              <span className="w-6 h-6 flex items-center justify-center bg-pink-500/10 text-pink-500 rounded">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                </svg>
+              </span>
+              <span className="text-sm text-zinc-200">Apariencia y Temas</span>
             </div>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-500">
               <polyline points="9 18 15 12 9 6" />
@@ -466,6 +487,7 @@ export function SettingsModal() {
             {activeView === "main" && "Configuración Global"}
             {activeView === "latex" && "Entorno LaTeX"}
             {activeView === "ai" && "Inteligencia Artificial"}
+            {activeView === "appearance" && "Apariencia y Temas"}
             {activeView === "app" && "Editor"}
             {activeView === "git" && "Control de Versiones"}
           </h2>
@@ -484,6 +506,97 @@ export function SettingsModal() {
         {activeView === "main" && renderMainView()}
         {activeView === "latex" && renderLatexView()}
         {activeView === "ai" && renderAiView()}
+        {activeView === "appearance" && (
+          <div className="flex-1 overflow-y-auto p-4 animate-in slide-in-from-right-4 duration-150">
+            <div className="space-y-6">
+              <div>
+                <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
+                  Tema de la Aplicación
+                </h4>
+                <div className="space-y-2">
+                  <label className="flex items-center justify-between p-3 bg-zinc-800/50 border border-zinc-800 rounded-lg cursor-pointer hover:bg-zinc-700/30 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="radio" 
+                        name="app-theme" 
+                        checked={appTheme === "dark"}
+                        onChange={() => setAppTheme("dark")}
+                        className="text-emerald-500 focus:ring-emerald-500/20 bg-zinc-900 border-zinc-700"
+                      />
+                      <span className="text-sm text-zinc-200">Oscuro (Predeterminado)</span>
+                    </div>
+                    <div className="w-4 h-4 rounded-full bg-[#09090b] border border-zinc-600"></div>
+                  </label>
+                  
+                  <label className="flex items-center justify-between p-3 bg-zinc-800/50 border border-zinc-800 rounded-lg cursor-pointer hover:bg-zinc-700/30 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="radio" 
+                        name="app-theme" 
+                        checked={appTheme === "light"}
+                        onChange={() => setAppTheme("light")}
+                        className="text-emerald-500 focus:ring-emerald-500/20 bg-zinc-900 border-zinc-700"
+                      />
+                      <span className="text-sm text-zinc-200">Claro</span>
+                    </div>
+                    <div className="w-4 h-4 rounded-full bg-[#ffffff] border border-zinc-600"></div>
+                  </label>
+
+                  <label className="flex items-center justify-between p-3 bg-zinc-800/50 border border-zinc-800 rounded-lg cursor-pointer hover:bg-zinc-700/30 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="radio" 
+                        name="app-theme" 
+                        checked={appTheme === "custom"}
+                        onChange={() => setAppTheme("custom")}
+                        className="text-emerald-500 focus:ring-emerald-500/20 bg-zinc-900 border-zinc-700"
+                      />
+                      <span className="text-sm text-zinc-200">Personalizado</span>
+                    </div>
+                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: customThemeColor }}></div>
+                  </label>
+                </div>
+              </div>
+
+              {appTheme === "custom" && (
+                <div className="animate-in slide-in-from-top-2 duration-150">
+                  <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
+                    Color Base Personalizado
+                  </h4>
+                  <div className="bg-zinc-800/50 border border-zinc-800 rounded-lg p-3">
+                    <div className="flex items-center gap-3 mb-3">
+                      <input 
+                        type="color" 
+                        value={customThemeColor}
+                        onChange={(e) => setCustomThemeColor(e.target.value)}
+                        className="w-10 h-10 rounded cursor-pointer bg-zinc-900 border-0 p-0.5"
+                      />
+                      <input 
+                        type="text" 
+                        value={customThemeColor.toUpperCase()}
+                        onChange={(e) => setCustomThemeColor(e.target.value)}
+                        className="bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-200 uppercase font-mono w-28"
+                        maxLength={7}
+                      />
+                    </div>
+                    
+                    <div className="flex gap-2 mt-3">
+                      {["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"].map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => setCustomThemeColor(color)}
+                          className="w-8 h-8 rounded-full border-2 border-zinc-800 transition-transform hover:scale-110"
+                          style={{ backgroundColor: color }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {activeView === "app" && (
           <div className="flex-1 overflow-y-auto p-4 animate-in slide-in-from-right-4 duration-150">
             <div className="space-y-4">
