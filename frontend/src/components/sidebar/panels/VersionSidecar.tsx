@@ -12,6 +12,12 @@ export function VersionSidecar() {
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Manual commit states
+  const [isComposing, setIsComposing] = useState(false);
+  const [commitTitle, setCommitTitle] = useState("");
+  const [commitDesc, setCommitDesc] = useState("");
+  const [saving, setSaving] = useState(false);
+
   const fetchHistory = async () => {
     if (!workspaceDir) return;
     setLoading(true);
@@ -82,6 +88,32 @@ export function VersionSidecar() {
       await fetchHistory();
     } catch (err) {
       setError(String(err));
+    }
+  };
+
+  const handleManualCommit = async () => {
+    if (!workspaceDir || !commitTitle.trim()) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const message = commitDesc.trim() 
+        ? `${commitTitle.trim()}\n\n${commitDesc.trim()}`
+        : commitTitle.trim();
+        
+      await invoke("git_commit", { 
+        workspace: workspaceDir, 
+        message 
+      });
+      
+      setCommitTitle("");
+      setCommitDesc("");
+      setIsComposing(false);
+      await fetchHistory();
+    } catch (err) {
+      console.error(err);
+      setError(String(err));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -166,6 +198,51 @@ export function VersionSidecar() {
           </button>
         ) : (
           <p className="text-[10px] text-zinc-500">Configura GitHub en Settings</p>
+        )}
+
+        {isComposing ? (
+          <div className="flex flex-col gap-2 mt-2 p-2 bg-zinc-800/80 rounded border border-zinc-700">
+            <input 
+              type="text" 
+              placeholder="Nombre de la versión (ej. 'Agregada sección 2')"
+              value={commitTitle}
+              onChange={(e) => setCommitTitle(e.target.value)}
+              disabled={saving}
+              className="w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-blue-500 transition-colors placeholder:text-zinc-500"
+              autoFocus
+            />
+            <textarea 
+              placeholder="Comentarios (opcional)"
+              value={commitDesc}
+              onChange={(e) => setCommitDesc(e.target.value)}
+              disabled={saving}
+              rows={2}
+              className="w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-blue-500 transition-colors resize-none placeholder:text-zinc-500"
+            />
+            <div className="flex justify-end gap-2 mt-1">
+              <button 
+                onClick={() => setIsComposing(false)}
+                disabled={saving}
+                className="px-2 py-1 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-[10px] rounded transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleManualCommit}
+                disabled={saving || !commitTitle.trim()}
+                className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white font-medium text-[10px] rounded transition-colors disabled:opacity-50"
+              >
+                {saving ? "Guardando..." : "Guardar Versión"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button 
+            onClick={() => setIsComposing(true)}
+            className="w-full mt-2 py-1.5 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 text-xs font-medium rounded transition-colors"
+          >
+            + Nueva Versión
+          </button>
         )}
       </div>
 

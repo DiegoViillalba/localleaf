@@ -647,6 +647,16 @@ export function SettingsModal() {
                     <input 
                       type="radio" 
                       name="git-interval" 
+                      checked={gitConfig.intervalMinutes === 0}
+                      onChange={() => setGitConfig({ intervalMinutes: 0 })}
+                      className="text-emerald-500 focus:ring-emerald-500/20 bg-zinc-900 border-zinc-700"
+                    />
+                    <div className="text-sm text-zinc-200">Completamente Manual</div>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 bg-zinc-800/50 border border-zinc-800 rounded-lg cursor-pointer hover:bg-zinc-700/30 transition-colors">
+                    <input 
+                      type="radio" 
+                      name="git-interval" 
                       checked={gitConfig.intervalMinutes === 2}
                       onChange={() => setGitConfig({ intervalMinutes: 2 })}
                       className="text-emerald-500 focus:ring-emerald-500/20 bg-zinc-900 border-zinc-700"

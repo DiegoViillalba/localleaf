@@ -9,6 +9,8 @@ export function useAutoCommit() {
   useEffect(() => {
     if (!workspaceDir) return;
 
+    if (gitConfig.intervalMinutes === 0) return;
+
     // Clear previous timer
     if (timerRef.current) {
       window.clearTimeout(timerRef.current);

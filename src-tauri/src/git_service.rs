@@ -65,7 +65,7 @@ async fn run_git_sidecar_status(
 pub async fn git_init(app: AppHandle, workspace: String) -> Result<(), String> {
     let git_dir = PathBuf::from(&workspace).join(".git");
     if !git_dir.exists() {
-        run_git_sidecar(&app, &["init"], &workspace).await?;
+        run_git_sidecar(&app, &["init", "-b", "main"], &workspace).await?;
         // Set up initial config if necessary (like default branch)
         run_git_sidecar(&app, &["config", "user.name", "LocalLeaf Editor"], &workspace).await.ok();
         run_git_sidecar(&app, &["config", "user.email", "auto@localleaf.local"], &workspace).await.ok();
@@ -176,7 +176,8 @@ pub async fn git_pull(app: AppHandle, workspace: String, url: String, pat: Strin
     };
 
     // We use pull --no-rebase so we can capture merge conflicts normally
-    let (code, stdout, stderr) = run_git_sidecar_status(&app, &["pull", &auth_url, "main", "--no-rebase"], &workspace).await?;
+    // We add --allow-unrelated-histories to support initial sync with repos that already have a README or LICENSE
+    let (code, stdout, stderr) = run_git_sidecar_status(&app, &["pull", &auth_url, "main", "--no-rebase", "--allow-unrelated-histories"], &workspace).await?;
     
     if code != 0 {
         // If there are merge conflicts, git returns exit code 1
