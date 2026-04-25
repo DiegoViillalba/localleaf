@@ -61,6 +61,19 @@ const TABS: Tab[] = [
       </svg>
     ),
   },
+  {
+    id: "versions",
+    label: "Historial de Versiones",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="18" r="3" />
+        <circle cx="6" cy="6" r="3" />
+        <circle cx="18" cy="9" r="3" />
+        <path d="M6 9v3a3 3 0 0 0 3 3h3" />
+        <path d="M18 12v-3" />
+      </svg>
+    ),
+  },
 ];
 
 export function SidebarToolbar() {

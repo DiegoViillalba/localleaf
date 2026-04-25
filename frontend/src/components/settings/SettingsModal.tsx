@@ -10,7 +10,7 @@ interface TectonicStatus {
   bundle_cached: boolean;
 }
 
-type SettingsView = "main" | "latex" | "ai" | "app";
+type SettingsView = "main" | "latex" | "ai" | "app" | "git";
 
 export function SettingsModal() {
   const {
@@ -24,6 +24,8 @@ export function SettingsModal() {
     setLatexConfig,
     editorConfig,
     setEditorConfig,
+    gitConfig,
+    setGitConfig,
   } = useAppStore();
 
   const [activeView, setActiveView] = useState<SettingsView>("main");
@@ -159,6 +161,23 @@ export function SettingsModal() {
                 </svg>
               </span>
               <span className="text-sm text-zinc-200">Editor</span>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-500">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => setActiveView("git")}
+            className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-700/50 transition-colors text-left"
+          >
+            <div className="flex items-center gap-3">
+              <span className="w-6 h-6 flex items-center justify-center bg-zinc-500/10 text-zinc-400 rounded">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
+                </svg>
+              </span>
+              <span className="text-sm text-zinc-200">Versionado (Git)</span>
             </div>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-500">
               <polyline points="9 18 15 12 9 6" />
@@ -448,6 +467,7 @@ export function SettingsModal() {
             {activeView === "latex" && "Entorno LaTeX"}
             {activeView === "ai" && "Inteligencia Artificial"}
             {activeView === "app" && "Editor"}
+            {activeView === "git" && "Control de Versiones"}
           </h2>
           <button
             onClick={() => setIsSettingsOpen(false)}
@@ -611,6 +631,87 @@ export function SettingsModal() {
                   </label>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+        {activeView === "git" && (
+          <div className="flex-1 overflow-y-auto p-4 animate-in slide-in-from-right-4 duration-150">
+            <div className="space-y-6">
+              
+              <div>
+                <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
+                  Frecuencia de Guardado
+                </h4>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3 p-3 bg-zinc-800/50 border border-zinc-800 rounded-lg cursor-pointer hover:bg-zinc-700/30 transition-colors">
+                    <input 
+                      type="radio" 
+                      name="git-interval" 
+                      checked={gitConfig.intervalMinutes === 2}
+                      onChange={() => setGitConfig({ intervalMinutes: 2 })}
+                      className="text-emerald-500 focus:ring-emerald-500/20 bg-zinc-900 border-zinc-700"
+                    />
+                    <div className="text-sm text-zinc-200">Cada 2 minutos de inactividad</div>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 bg-zinc-800/50 border border-zinc-800 rounded-lg cursor-pointer hover:bg-zinc-700/30 transition-colors">
+                    <input 
+                      type="radio" 
+                      name="git-interval" 
+                      checked={gitConfig.intervalMinutes === 5}
+                      onChange={() => setGitConfig({ intervalMinutes: 5 })}
+                      className="text-emerald-500 focus:ring-emerald-500/20 bg-zinc-900 border-zinc-700"
+                    />
+                    <div className="text-sm text-zinc-200">Cada 5 minutos de inactividad</div>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 bg-zinc-800/50 border border-zinc-800 rounded-lg cursor-pointer hover:bg-zinc-700/30 transition-colors">
+                    <input 
+                      type="radio" 
+                      name="git-interval" 
+                      checked={gitConfig.intervalMinutes === 10}
+                      onChange={() => setGitConfig({ intervalMinutes: 10 })}
+                      className="text-emerald-500 focus:ring-emerald-500/20 bg-zinc-900 border-zinc-700"
+                    />
+                    <div className="text-sm text-zinc-200">Cada 10 minutos de inactividad</div>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
+                  Sincronización (Opcional)
+                </h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-400 mb-1">
+                      URL del Repositorio (Ej: https://github.com/usuario/repo.git)
+                    </label>
+                    <input
+                      type="text"
+                      value={gitConfig.repoUrl}
+                      onChange={(e) => setGitConfig({ repoUrl: e.target.value })}
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-sm text-zinc-200 outline-none focus:border-emerald-500 transition-colors"
+                      placeholder="https://..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-400 mb-1">
+                      Token de Acceso Personal (PAT)
+                    </label>
+                    <input
+                      type="password"
+                      value={gitConfig.pat}
+                      onChange={(e) => setGitConfig({ pat: e.target.value })}
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-sm text-zinc-200 outline-none focus:border-emerald-500 transition-colors"
+                      placeholder="ghp_..."
+                    />
+                    <p className="text-[10px] text-zinc-500 mt-1">
+                      Necesario para sincronizar repositorios privados. Se almacena localmente de forma segura.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
         )}

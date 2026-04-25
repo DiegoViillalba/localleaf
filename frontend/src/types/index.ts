@@ -54,3 +54,21 @@ export interface EditorConfig {
   spellCheck: boolean;
 }
 
+export interface GitCommit {
+  hash: string;
+  author: string;
+  date: string;
+  message: string;
+}
+
+export interface GitStatusResult {
+  has_changes: boolean;
+  has_conflicts: boolean;
+  conflicted_files: string[];
+}
+
+export interface GitConfig {
+  intervalMinutes: number; // 2, 5, 10
+  repoUrl: string;
+  pat: string;
+}

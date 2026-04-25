@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AiConfig, AiStatus, CompileResult, CompileStatus, FileEntry, LatexConfig, EditorConfig } from "../types";
+import type { AiConfig, AiStatus, CompileResult, CompileStatus, FileEntry, LatexConfig, EditorConfig, GitConfig } from "../types";
 
 
 export interface ChatMessage {
@@ -8,7 +8,7 @@ export interface ChatMessage {
   content: string;
 }
 
-export type SidebarTab = "files" | "search" | "logs" | "outline" | "ai";
+export type SidebarTab = "files" | "search" | "logs" | "outline" | "ai" | "versions";
 
 interface AppState {
   // Workspace
@@ -50,6 +50,9 @@ interface AppState {
   // Editor config
   editorConfig: EditorConfig;
 
+  // Git config
+  gitConfig: GitConfig;
+
   // UI
   tectonicAvailable: boolean;
   sidebarTab: SidebarTab;
@@ -62,6 +65,13 @@ interface AppState {
     isSidebarCollapsed: boolean;
     isPdfCollapsed: boolean;
   };
+
+  // Diff Viewer
+  diffViewer: {
+    isOpen: boolean;
+    original: string;
+    modified: string;
+  } | null;
 
   // Actions — workspace
   setWorkspace: (dir: string, tree: FileEntry, rootPath?: string | null) => void;
@@ -89,6 +99,8 @@ interface AppState {
   updateLastAiChatMessage: (content: string) => void;
   setPendingAiPrompt: (prompt: string | null) => void;
 
+  setDiffViewer: (state: { isOpen: boolean; original: string; modified: string } | null) => void;
+
   // Actions — UI
   setTectonicAvailable: (v: boolean) => void;
   setSidebarTab: (tab: SidebarTab) => void;
@@ -99,6 +111,7 @@ interface AppState {
   setLatexSettings: (latex: Partial<AppState["settings"]["latex"]>) => void;
   setLatexConfig: (cfg: Partial<LatexConfig>) => void;
   setEditorConfig: (cfg: Partial<EditorConfig>) => void;
+  setGitConfig: (cfg: Partial<GitConfig>) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -128,6 +141,7 @@ export const useAppStore = create<AppState>()(
   sidebarTab: "files",
   editorJumpLine: null,
   isSettingsOpen: false,
+  diffViewer: null,
   layout: {
     sidebarWidth: 20,
     editorWidth: 40,
@@ -152,6 +166,11 @@ export const useAppStore = create<AppState>()(
     matchBrackets: true,
     autoComplete: true,
     spellCheck: false,
+  },
+  gitConfig: {
+    intervalMinutes: 5,
+    repoUrl: "",
+    pat: "",
   },
 
   setWorkspace: (dir, tree, rootPath = null) =>
@@ -206,6 +225,8 @@ export const useAppStore = create<AppState>()(
   }),
   setPendingAiPrompt: (prompt) => set({ pendingAiPrompt: prompt }),
 
+  setDiffViewer: (state) => set({ diffViewer: state }),
+
   setTectonicAvailable: (v) => set({ tectonicAvailable: v }),
   setSidebarTab: (tab) => set({ sidebarTab: tab }),
   setEditorJumpLine: (line) => set({ editorJumpLine: line }),
@@ -222,6 +243,8 @@ export const useAppStore = create<AppState>()(
     set((s) => ({ latexConfig: { ...s.latexConfig, ...cfg } })),
   setEditorConfig: (cfg) =>
     set((s) => ({ editorConfig: { ...s.editorConfig, ...cfg } })),
+  setGitConfig: (cfg) =>
+    set((s) => ({ gitConfig: { ...s.gitConfig, ...cfg } })),
 
     }),
     {
@@ -232,6 +255,7 @@ export const useAppStore = create<AppState>()(
         settings: state.settings,
         latexConfig: state.latexConfig,
         editorConfig: state.editorConfig,
+        gitConfig: state.gitConfig,
       }),
 
     }

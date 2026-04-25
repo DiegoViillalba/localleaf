@@ -37,6 +37,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "externalBin": ["bin/tectonic"]
+    "externalBin": ["bin/tectonic", "bin/git"]
   }
 }

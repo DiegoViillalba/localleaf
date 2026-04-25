@@ -4,6 +4,7 @@ mod ai_service;
 mod compiler;
 mod error_parser;
 mod fs_service;
+mod git_service;
 
 use tauri::{Emitter, Manager};
 
@@ -46,6 +47,15 @@ fn main() {
             fs_service::import_files,
             ai_service::stream_ai_assist,
             ai_service::fetch_available_models,
+            git_service::git_init,
+            git_service::git_status,
+            git_service::git_commit,
+            git_service::git_log,
+            git_service::git_get_diff,
+            git_service::git_pull,
+            git_service::git_push,
+            git_service::git_resolve_conflict,
+            git_service::git_restore_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

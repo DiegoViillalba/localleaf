@@ -5,6 +5,7 @@ import { SearchPanel } from "./panels/SearchPanel";
 import { LogsPanel } from "./panels/LogsPanel";
 import { OutlinePanel } from "./panels/OutlinePanel";
 import { AiChatPanel } from "./panels/AiChatPanel";
+import { VersionSidecar } from "./panels/VersionSidecar";
 
 export function Sidebar() {
   const sidebarTab = useAppStore((s) => s.sidebarTab);
@@ -20,6 +21,7 @@ export function Sidebar() {
         {sidebarTab === "logs"   && <LogsPanel />}
         {sidebarTab === "outline" && <OutlinePanel />}
         {sidebarTab === "ai" && <AiChatPanel />}
+        {sidebarTab === "versions" && <VersionSidecar />}
       </div>
     </div>
   );

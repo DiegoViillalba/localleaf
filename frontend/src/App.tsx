@@ -3,6 +3,7 @@ import { Group, Panel, PanelImperativeHandle, PanelSize } from "react-resizable-
 import { checkTectonic, onTectonicMissing } from "./lib/tauri";
 import { useAppStore } from "./store/useAppStore";
 import { useAutoSave } from "./hooks/useAutoSave";
+import { useAutoCommit } from "./hooks/useAutoCommit";
 import { useCompile } from "./hooks/useCompile";
 import { Sidebar } from "./components/sidebar/Sidebar";
 import { LatexEditor } from "./components/editor/LatexEditor";
@@ -12,9 +13,10 @@ import { StatusBar } from "./components/ui/StatusBar";
 import { TectonicBanner } from "./components/ui/TectonicBanner";
 import { ResizeHandle } from "./components/ui/ResizeHandle";
 import { SettingsModal } from "./components/settings/SettingsModal";
+import { DiffViewer } from "./components/editor/DiffViewer";
 
 export default function App() {
-  const { setTectonicAvailable, layout, setLayout } = useAppStore();
+  const { setTectonicAvailable, layout, setLayout, diffViewer, setDiffViewer } = useAppStore();
   const { compile } = useCompile();
   const sidebarRef = useRef<PanelImperativeHandle>(null);
   const pdfRef = useRef<PanelImperativeHandle>(null);
@@ -55,6 +57,7 @@ export default function App() {
 
   // Auto-save side-effect
   useAutoSave();
+  useAutoCommit();
 
   // Check Tectonic on mount
   useEffect(() => {
@@ -91,13 +94,21 @@ export default function App() {
 
         <ResizeHandle />
 
-        {/* Editor */}
+        {/* Editor or DiffViewer */}
         <Panel 
           defaultSize={layout.editorWidth}
           minSize={20}
-          className="flex flex-col min-w-0 min-h-0"
+          className="flex flex-col min-w-0 min-h-0 relative"
         >
-          <LatexEditor className="flex-1 min-h-0" />
+          {diffViewer?.isOpen ? (
+            <DiffViewer 
+              original={diffViewer.original} 
+              modified={diffViewer.modified} 
+              onClose={() => setDiffViewer(null)} 
+            />
+          ) : (
+            <LatexEditor className="flex-1 min-h-0" />
+          )}
           <ErrorPanel />
         </Panel>
 
