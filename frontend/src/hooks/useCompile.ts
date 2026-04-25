@@ -1,5 +1,5 @@
-import { useCallback } from "react";
-import { compileLatex, saveFile } from "../lib/tauri";
+import { useCallback, useRef } from "react";
+import { compileLatex, saveFile, cancelCompilation } from "../lib/tauri";
 import { useAppStore } from "../store/useAppStore";
 
 export function useCompile() {
@@ -17,6 +17,8 @@ export function useCompile() {
   } = useAppStore();
 
 
+  const compileIdRef = useRef<string | null>(null);
+
   const compile = useCallback(async () => {
     // Always flush the active file before compiling
     if (activeFilePath && isDirty) {
@@ -30,8 +32,11 @@ export function useCompile() {
 
     setCompileStatus("compiling");
 
+    const currentCompileId = crypto.randomUUID();
+    compileIdRef.current = currentCompileId;
+
     try {
-      const result = await compileLatex(target, latexConfig.shellEscape);
+      const result = await compileLatex(target, latexConfig.shellEscape, currentCompileId);
 
       setCompileResult(result);
 
@@ -52,6 +57,10 @@ export function useCompile() {
 
       setCompileStatus("error");
       setSidebarTab("logs");
+    } finally {
+      if (compileIdRef.current === currentCompileId) {
+        compileIdRef.current = null;
+      }
     }
   }, [
     activeFilePath,
@@ -67,5 +76,12 @@ export function useCompile() {
   ]);
 
 
-  return { compile };
+  const cancel = useCallback(() => {
+    if (compileIdRef.current) {
+      cancelCompilation(compileIdRef.current).catch(console.error);
+      compileIdRef.current = null;
+    }
+  }, []);
+
+  return { compile, cancel };
 }

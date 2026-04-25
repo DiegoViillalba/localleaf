@@ -237,7 +237,7 @@ export function SettingsModal() {
                   : "bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/50"
               }`}
             >
-              🔒 Modo Seguro
+              Modo Seguro
             </button>
             <button
               id="latex-mode-advanced"
@@ -248,7 +248,7 @@ export function SettingsModal() {
                   : "bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/50"
               }`}
             >
-              ⚡ Modo Avanzado
+              Modo Avanzado
             </button>
           </div>
 

@@ -68,7 +68,7 @@ jobs:
   build-windows:
     name: Windows · x86_64
     runs-on: windows-latest
-    needs: build-macos   # 👈 espera a que el release exista
+    needs: build-macos   #  espera a que el release exista
 
     steps:
       - uses: actions/checkout@v4

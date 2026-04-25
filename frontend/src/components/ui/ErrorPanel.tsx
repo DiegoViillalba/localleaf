@@ -36,7 +36,7 @@ export function ErrorPanel() {
   if (compileStatus === "success" && (!compileResult?.errors?.length)) {
     return (
       <div className="px-4 py-2 text-xs text-emerald-500 border-t border-zinc-800">
-        ✓ Compilado correctamente
+        Compilado correctamente
       </div>
     );
   }

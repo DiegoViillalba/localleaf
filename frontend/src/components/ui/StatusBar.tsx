@@ -8,11 +8,11 @@ export function StatusBar() {
     if (!tectonicAvailable)
       return <span className="text-red-500">⚠ Tectonic no encontrado</span>;
     if (compileStatus === "compiling")
-      return <span className="text-emerald-400 animate-pulse">● Compilando</span>;
+      return <span className="text-emerald-400 animate-pulse">Compilando</span>;
     if (compileStatus === "success")
-      return <span className="text-emerald-600">✓ OK</span>;
+      return <span className="text-emerald-600">OK</span>;
     if (compileStatus === "error")
-      return <span className="text-red-400">✕ Error</span>;
+      return <span className="text-red-400">Error</span>;
     return null;
   };
 

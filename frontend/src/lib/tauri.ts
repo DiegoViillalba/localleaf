@@ -7,8 +7,12 @@ import type { AiRequest, CompileResult, FileEntry } from "../types";
 export const compileLatex = (
   texPath: string,
   shellEscape: boolean,
+  compileId?: string,
 ): Promise<CompileResult> =>
-  invoke("compile_latex", { texPath, shellEscape });
+  invoke("compile_latex", { texPath, shellEscape, compileId });
+
+export const cancelCompilation = (compileId: string): Promise<void> =>
+  invoke("cancel_compilation", { compileId });
 
 
 export const checkTectonic = (): Promise<boolean> =>

@@ -25,8 +25,11 @@ export function LatexEditor({ className = "" }: EditorProps) {
   const viewRef = useRef<EditorView | null>(null);
   const configCompartment = useRef(new Compartment());
   const { content, setContent, activeFilePath, rootFilePath, compileStatus, editorJumpLine, setEditorJumpLine, editorConfig } = useAppStore();
-  const { compile } = useCompile();
+  const { compile, cancel } = useCompile();
   const { assist, aiStatus } = useAiAssist();
+
+  const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  const compileShortcut = isMac ? "⌘S" : "Ctrl+S";
 
   const isImage = activeFilePath ? /\.(png|jpe?g|gif|webp|svg)$/i.test(activeFilePath) : false;
   const isPdf = activeFilePath ? /\.pdf$/i.test(activeFilePath) : false;
@@ -228,23 +231,36 @@ export function LatexEditor({ className = "" }: EditorProps) {
             <>✦ AI Assist</>
           )}
         </button>
-        <button
-          onClick={compile}
-          disabled={!activeFilePath || compileStatus === "compiling"}
-          className="flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium
-                     bg-zinc-800 text-zinc-300 border border-zinc-700
-                     hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed
-                     transition-colors"
-        >
-          {compileStatus === "compiling" ? (
-            <>
-              <span className="inline-block w-2 h-2 rounded-full bg-zinc-400 animate-pulse" />
-              Compilando...
-            </>
-          ) : (
-            <>⌘S Compilar</>
+        <div className="flex items-center gap-1">
+          {compileStatus === "compiling" && (
+            <button
+              onClick={cancel}
+              title="Detener compilación"
+              className="flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium
+                         bg-red-900/40 text-red-400 border border-red-800
+                         hover:bg-red-800/60 transition-colors"
+            >
+              ✕ Detener
+            </button>
           )}
-        </button>
+          <button
+            onClick={compile}
+            disabled={!activeFilePath || compileStatus === "compiling"}
+            className="flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium
+                       bg-zinc-800 text-zinc-300 border border-zinc-700
+                       hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed
+                       transition-colors"
+          >
+            {compileStatus === "compiling" ? (
+              <>
+                <span className="inline-block w-2 h-2 rounded-full bg-zinc-400 animate-pulse" />
+                Compilando...
+              </>
+            ) : (
+              <>{compileShortcut} Compilar</>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* CodeMirror */}
