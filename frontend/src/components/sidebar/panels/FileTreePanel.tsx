@@ -14,7 +14,7 @@ import type { FileEntry } from "../../../types";
 
 // ─── Root auto-detection ──────────────────────────────────────────────────────
 
-function detectRoot(tree: FileEntry): string | null {
+export function detectRoot(tree: FileEntry): string | null {
   const direct = tree.children ?? [];
   const mainTex = direct.find((f) => !f.is_dir && f.name === "main.tex");
   if (mainTex) return mainTex.path;

@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Group, Panel, PanelImperativeHandle, PanelSize } from "react-resizable-panels";
-import { checkTectonic, onTectonicMissing } from "./lib/tauri";
+import { checkTectonic, onTectonicMissing, scanProject, openFolderDialog } from "./lib/tauri";
+import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useAppStore } from "./store/useAppStore";
 import { useAutoSave } from "./hooks/useAutoSave";
 import { useAutoCommit } from "./hooks/useAutoCommit";
@@ -14,9 +16,10 @@ import { TectonicBanner } from "./components/ui/TectonicBanner";
 import { ResizeHandle } from "./components/ui/ResizeHandle";
 import { SettingsModal } from "./components/settings/SettingsModal";
 import { DiffViewer } from "./components/editor/DiffViewer";
+import { detectRoot } from "./components/sidebar/panels/FileTreePanel";
 
 export default function App() {
-  const { setTectonicAvailable, layout, setLayout, diffViewer, setDiffViewer } = useAppStore();
+  const { setTectonicAvailable, layout, setLayout, diffViewer, setDiffViewer, workspaceDir, setWorkspace } = useAppStore();
   const { compile } = useCompile();
   const sidebarRef = useRef<PanelImperativeHandle>(null);
   const pdfRef = useRef<PanelImperativeHandle>(null);
@@ -24,19 +27,47 @@ export default function App() {
   // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+S on Mac or Ctrl+G on Windows
-      const isCmdS = e.metaKey && e.key.toLowerCase() === "s";
+      const isCmdS = e.metaKey && e.key.toLowerCase() === "s" && !e.shiftKey;
       const isCtrlG = e.ctrlKey && e.key.toLowerCase() === "g";
+      const isCmdShiftN = e.metaKey && e.shiftKey && e.key.toLowerCase() === "n";
+      const isCtrlShiftN = e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "n";
       
       if (isCmdS || isCtrlG) {
         e.preventDefault();
         compile();
+      }
+
+      if (isCmdShiftN || isCtrlShiftN) {
+        e.preventDefault();
+        openFolderDialog().then((dir) => {
+          if (dir) {
+            invoke("open_project_window", { projectPath: dir }).catch(console.error);
+          }
+        });
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [compile]);
+
+  // Read URL project parameter on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const projectPath = params.get("project");
+    if (projectPath) {
+      scanProject(projectPath).then(tree => {
+        const root = detectRoot(tree);
+        setWorkspace(projectPath, tree, root);
+      }).catch(console.error);
+    }
+  }, [setWorkspace]);
+
+  // Update window title based on workspace
+  useEffect(() => {
+    const windowTitle = workspaceDir ? `${workspaceDir.split("/").pop()} - LocalLeaf` : "LocalLeaf";
+    getCurrentWebviewWindow().setTitle(windowTitle).catch(console.error);
+  }, [workspaceDir]);
 
   // Sync state -> Panel layout
   useEffect(() => {

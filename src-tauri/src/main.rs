@@ -5,6 +5,7 @@ mod compiler;
 mod error_parser;
 mod fs_service;
 mod git_service;
+mod window_manager;
 
 use tauri::{Emitter, Manager};
 
@@ -14,6 +15,8 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
+            app.manage(window_manager::ProjectWindows::new());
+            
             // Notify the frontend if Tectonic is missing so the banner shows immediately
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
@@ -56,6 +59,7 @@ fn main() {
             git_service::git_push,
             git_service::git_resolve_conflict,
             git_service::git_restore_file,
+            window_manager::open_project_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
