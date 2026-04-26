@@ -4,7 +4,7 @@ import { EditorState, Compartment, StateEffect, Prec } from "@codemirror/state";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
 import { StreamLanguage, foldGutter, indentOnInput, syntaxHighlighting, defaultHighlightStyle, bracketMatching, foldKeymap } from "@codemirror/language";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { autocompletion, acceptCompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from "@codemirror/autocomplete";
+import { autocompletion, acceptCompletion, closeBrackets, closeBracketsKeymap, completionKeymap, CompletionSource } from "@codemirror/autocomplete";
 import { linter, lintGutter, lintKeymap } from "@codemirror/lint";
 import { keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine } from "@codemirror/view";
 import { indentWithTab, history, defaultKeymap, historyKeymap } from "@codemirror/commands";
@@ -14,7 +14,10 @@ import { useAppStore } from "../../store/useAppStore";
 import { useCompile } from "../../hooks/useCompile";
 import { useAiAssist } from "../../hooks/useAiAssist";
 import { latexCompletions } from "./latexCompletions";
+import { makeCitationSource } from "./citationCompletions";
 import { latexLinter } from "./latexLinter";
+import { useBibEntries } from "../../hooks/useBibEntries";
+import type { BibEntry } from "../../lib/parseBib";
 import { 
   toggleLatexComment, 
   wrapSelectionWithLatexCommand, 
@@ -32,6 +35,17 @@ export function LatexEditor({ className = "" }: EditorProps) {
   const { content, setContent, activeFilePath, rootFilePath, compileStatus, editorJumpLine, setEditorJumpLine, editorConfig } = useAppStore();
   const { compile, cancel } = useCompile();
   const { assist, aiStatus } = useAiAssist();
+
+  // Bib entries — updated whenever \bibliography / \addbibresource refs change
+  const bibEntries = useBibEntries();
+  const bibEntriesRef = useRef<BibEntry[]>([]);
+  // Stable completion source — reads from the ref at call time, no editor reconfiguration needed
+  const citationSourceRef = useRef<CompletionSource>(makeCitationSource(bibEntriesRef));
+
+  // Keep ref in sync so the citation source always reads fresh entries
+  useEffect(() => {
+    bibEntriesRef.current = bibEntries;
+  }, [bibEntries]);
 
   const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
   const compileShortcut = isMac ? "⌘S" : "Ctrl+S";
@@ -54,7 +68,7 @@ export function LatexEditor({ className = "" }: EditorProps) {
       exts.push(bracketMatching(), closeBrackets());
     }
     if (cfg.autoComplete) {
-      exts.push(autocompletion({ override: [latexCompletions] }));
+      exts.push(autocompletion({ override: [citationSourceRef.current, latexCompletions] }));
     }
     if (cfg.wordWrap) {
       exts.push(EditorView.lineWrapping);
