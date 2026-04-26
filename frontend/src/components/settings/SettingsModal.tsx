@@ -483,13 +483,14 @@ export function SettingsModal() {
               </svg>
             </button>
           )}
-          <h2 className="text-base font-semibold text-zinc-100">
+          <h2 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
             {activeView === "main" && "Configuración Global"}
             {activeView === "latex" && "Entorno LaTeX"}
             {activeView === "ai" && "Inteligencia Artificial"}
             {activeView === "appearance" && "Apariencia y Temas"}
             {activeView === "app" && "Editor"}
             {activeView === "git" && "Control de Versiones"}
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-mono">v0.1.18</span>
           </h2>
           <button
             onClick={() => setIsSettingsOpen(false)}
