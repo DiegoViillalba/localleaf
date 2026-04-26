@@ -214,6 +214,10 @@ setPdfPath(`${result.pdf_path}?t=${Date.now()}`);
 
 `PdfViewer` detecta el cambio en `pdfPath` y recarga. El timestamp garantiza que el valor siempre es distinto incluso si el path del archivo no cambia.
 
+### Consumo de RAM elevado al compilar PDFs largos
+
+Si el proceso consume cada vez más memoria RAM al recompilar, se trata de una fuga de memoria (memory leak) en `pdfjs-dist`. Para evitar esto, es obligatorio destruir la instancia previa del documento PDF llamando a `docRef.current?.destroy()` en `PdfViewer.tsx` cada vez que se carga un nuevo documento y cuando el componente se desmonta.
+
 ### Tectonic no se encuentra en dev
 
 ```bash

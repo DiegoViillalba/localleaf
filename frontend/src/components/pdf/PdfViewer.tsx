@@ -43,6 +43,11 @@ export function PdfViewer() {
 
         if (cancelled) return;
 
+        // Destroy previous document instance to avoid memory leaks
+        if (docRef.current) {
+          docRef.current.destroy();
+        }
+
         docRef.current = pdf;
         setPageCount(pdf.numPages);
         setCurrentPage((prev) => Math.min(prev, pdf.numPages) || 1);
@@ -56,7 +61,12 @@ export function PdfViewer() {
     };
 
     loadPdf();
-    return () => { cancelled = true; };
+    return () => { 
+      cancelled = true; 
+      if (docRef.current) {
+        docRef.current.destroy();
+      }
+    };
   }, [pdfPath]);
 
   // Render the current page whenever page, scale or document changes
