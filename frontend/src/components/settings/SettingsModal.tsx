@@ -10,7 +10,7 @@ interface TectonicStatus {
   bundle_cached: boolean;
 }
 
-type SettingsView = "main" | "latex" | "ai" | "app" | "git" | "appearance";
+type SettingsView = "main" | "latex" | "ai" | "app" | "git" | "appearance" | "pdf";
 
 export function SettingsModal() {
   const {
@@ -26,10 +26,14 @@ export function SettingsModal() {
     setEditorConfig,
     gitConfig,
     setGitConfig,
+    setCustomThemeColor,
+    pdfViewerMode,
+    setPdfViewerMode,
+    pdfRenderQuality,
+    setPdfRenderQuality,
     appTheme,
     setAppTheme,
     customThemeColor,
-    setCustomThemeColor,
   } = useAppStore();
 
   const [activeView, setActiveView] = useState<SettingsView>("main");
@@ -152,8 +156,26 @@ export function SettingsModal() {
           </button>
 
           <button
+            onClick={() => setActiveView("pdf")}
+            className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-700/50 transition-colors text-left border-b border-zinc-800"
+          >
+            <div className="flex items-center gap-3">
+              <span className="w-6 h-6 flex items-center justify-center bg-emerald-500/10 text-emerald-500 rounded">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+              </span>
+              <span className="text-sm text-zinc-200">Visor de PDF</span>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-500">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+
+          <button
             onClick={() => setActiveView("ai")}
-            className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-700/50 transition-colors text-left"
+            className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-700/50 transition-colors text-left border-b border-zinc-800"
           >
             <div className="flex items-center gap-3">
               <span className="w-6 h-6 flex items-center justify-center bg-purple-500/10 text-purple-500 rounded">
@@ -172,7 +194,7 @@ export function SettingsModal() {
 
           <button
             onClick={() => setActiveView("app")}
-            className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-700/50 transition-colors text-left"
+            className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-700/50 transition-colors text-left border-b border-zinc-800"
           >
             <div className="flex items-center gap-3">
               <span className="w-6 h-6 flex items-center justify-center bg-orange-500/10 text-orange-500 rounded">
@@ -337,6 +359,76 @@ export function SettingsModal() {
     </div>
   );
 
+  const renderPdfView = () => (
+    <div className="flex-1 overflow-y-auto p-4 animate-in slide-in-from-right-4 duration-150">
+      <div className="space-y-6">
+        <div>
+          <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
+            Calidad de Renderizado (LocalLeaf)
+          </h4>
+          <p className="text-xs text-zinc-500 mb-3">
+            Afecta al modo "LocalLeaf". Una calidad mayor consume más memoria RAM.
+          </p>
+          <div className="space-y-2">
+            {[
+              { id: "low", label: "Baja (Económica)", desc: "DPR 1.0 - Menor uso de RAM" },
+              { id: "balanced", label: "Equilibrada", desc: "DPR 1.5 - Recomendado" },
+              { id: "high", label: "Alta (Nítida)", desc: "DPR 2.5 - Mayor nitidez" },
+            ].map((q) => (
+              <label 
+                key={q.id}
+                className={`flex items-center justify-between p-3 bg-zinc-800/50 border rounded-lg cursor-pointer hover:bg-zinc-700/30 transition-colors ${
+                  pdfRenderQuality === q.id ? "border-emerald-500/50" : "border-zinc-800"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="radio" 
+                    name="pdf-quality" 
+                    checked={pdfRenderQuality === q.id}
+                    onChange={() => setPdfRenderQuality(q.id as any)}
+                    className="text-emerald-500 focus:ring-emerald-500/20 bg-zinc-900 border-zinc-700"
+                  />
+                  <div>
+                    <p className="text-sm text-zinc-200">{q.label}</p>
+                    <p className="text-[10px] text-zinc-500">{q.desc}</p>
+                  </div>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
+            Lector Predeterminado
+          </h4>
+          <div className="flex rounded-lg overflow-hidden border border-zinc-700">
+            <button
+              onClick={() => setPdfViewerMode("localleaf")}
+              className={`flex-1 py-2 text-xs font-medium transition-colors ${
+                pdfViewerMode === "localleaf"
+                  ? "bg-emerald-600/20 text-emerald-400"
+                  : "bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/50"
+              }`}
+            >
+              LocalLeaf Reader
+            </button>
+            <button
+              onClick={() => setPdfViewerMode("browser")}
+              className={`flex-1 py-2 text-xs font-medium transition-colors border-l border-zinc-700 ${
+                pdfViewerMode === "browser"
+                  ? "bg-blue-600/20 text-blue-400"
+                  : "bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/50"
+              }`}
+            >
+              Navegador
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   const renderAiView = () => (
     <div className="flex-1 overflow-y-auto p-4 animate-in slide-in-from-right-4 duration-150">
@@ -490,7 +582,8 @@ export function SettingsModal() {
             {activeView === "appearance" && "Apariencia y Temas"}
             {activeView === "app" && "Editor"}
             {activeView === "git" && "Control de Versiones"}
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-mono">v0.1.19</span>
+            {activeView === "pdf" && "Visor de PDF"}
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-mono">v0.1.20</span>
           </h2>
           <button
             onClick={() => setIsSettingsOpen(false)}
@@ -506,6 +599,7 @@ export function SettingsModal() {
         {/* Content */}
         {activeView === "main" && renderMainView()}
         {activeView === "latex" && renderLatexView()}
+        {activeView === "pdf" && renderPdfView()}
         {activeView === "ai" && renderAiView()}
         {activeView === "appearance" && (
           <div className="flex-1 overflow-y-auto p-4 animate-in slide-in-from-right-4 duration-150">
@@ -799,43 +893,6 @@ export function SettingsModal() {
                   </label>
                 </div>
               </div>
-
-              <div>
-                <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
-                  Sincronización (Opcional)
-                </h4>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-400 mb-1">
-                      URL del Repositorio (Ej: https://github.com/usuario/repo.git)
-                    </label>
-                    <input
-                      type="text"
-                      value={gitConfig.repoUrl}
-                      onChange={(e) => setGitConfig({ repoUrl: e.target.value })}
-                      className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-sm text-zinc-200 outline-none focus:border-emerald-500 transition-colors"
-                      placeholder="https://..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-400 mb-1">
-                      Token de Acceso Personal (PAT)
-                    </label>
-                    <input
-                      type="password"
-                      value={gitConfig.pat}
-                      onChange={(e) => setGitConfig({ pat: e.target.value })}
-                      className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-sm text-zinc-200 outline-none focus:border-emerald-500 transition-colors"
-                      placeholder="ghp_..."
-                    />
-                    <p className="text-[10px] text-zinc-500 mt-1">
-                      Necesario para sincronizar repositorios privados. Se almacena localmente de forma segura.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
             </div>
           </div>
         )}

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef } from "react";
-import { EditorView } from "codemirror";
-import { EditorState, Compartment, StateEffect } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
+import { EditorState, Compartment, StateEffect, Prec } from "@codemirror/state";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
 import { StreamLanguage, foldGutter, indentOnInput, syntaxHighlighting, defaultHighlightStyle, bracketMatching, foldKeymap } from "@codemirror/language";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { autocompletion, acceptCompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from "@codemirror/autocomplete";
 import { linter, lintGutter, lintKeymap } from "@codemirror/lint";
 import { keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine } from "@codemirror/view";
-import { indentWithTab, toggleComment, history, defaultKeymap, historyKeymap } from "@codemirror/commands";
+import { indentWithTab, history, defaultKeymap, historyKeymap } from "@codemirror/commands";
 import { highlightSelectionMatches, searchKeymap } from "@codemirror/search";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { useAppStore } from "../../store/useAppStore";
@@ -15,6 +15,11 @@ import { useCompile } from "../../hooks/useCompile";
 import { useAiAssist } from "../../hooks/useAiAssist";
 import { latexCompletions } from "./latexCompletions";
 import { latexLinter } from "./latexLinter";
+import { 
+  toggleLatexComment, 
+  wrapSelectionWithLatexCommand, 
+  wrapWithLatexEnvironment 
+} from "./latexCommands";
 
 interface EditorProps {
   className?: string;
@@ -66,6 +71,98 @@ export function LatexEditor({ className = "" }: EditorProps) {
       doc: content,
       extensions: [
         // Base Setup (Static)
+        // TODO: Let the user select the keymap, for now we will use the default one
+        
+        // 1. Custom LaTeX Keymap (Absolute highest priority)
+        Prec.highest(keymap.of([
+          { key: "Tab", run: acceptCompletion },
+          indentWithTab,
+          // Ctrl/Cmd+S or Mod+Enter → save + compile
+          {
+            key: "Mod-s",
+            run: () => {
+              console.log("Compile (Mod-s) triggered");
+              compile();
+              return true;
+            },
+          },
+          {
+            key: "Mod-Enter",
+            run: () => {
+              console.log("Compile (Mod-Enter) triggered");
+              compile();
+              return true;
+            },
+          },
+          // Ctrl+G → save + compile (Windows fallback)
+          {
+            key: "Ctrl-g",
+            run: () => {
+              console.log("Compile (Ctrl-g) triggered");
+              compile();
+              return true;
+            },
+          },
+          // Custom LaTeX commands
+          {
+            key: "Mod-/",
+            run: (view) => {
+              console.log("Toggle comment (Mod-/) triggered");
+              return toggleLatexComment(view);
+            },
+          },
+          {
+            key: "Mod-Shift-c", // This is manually set because this commad is reserverd for the sistem DO NOT CHANGE
+            run: (view) => {
+              console.log("Toggle comment (Mod-Shift-7) triggered");
+              return toggleLatexComment(view);
+            },
+          },
+          {
+            key: "Mod-b",
+            run: (view) => {
+              console.log("Bold triggered");
+              return wrapSelectionWithLatexCommand("textbf")(view);
+            },
+          },
+          {
+            key: "Mod-i",
+            run: (view) => {
+              console.log("Italic triggered");
+              return wrapSelectionWithLatexCommand("textit")(view);
+            },
+          },
+          {
+            key: "Mod-Shift-e",
+            run: (view) => {
+              console.log("Emph triggered");
+              return wrapSelectionWithLatexCommand("emph")(view);
+            },
+          },
+          {
+            key: "Mod-Shift-m",
+            run: (view) => {
+              console.log("Equation triggered");
+              return wrapWithLatexEnvironment("equation")(view);
+            },
+          },
+          {
+            key: "Mod-Shift-a",
+            run: (view) => {
+              console.log("Align triggered");
+              return wrapWithLatexEnvironment("align")(view);
+            },
+          },
+          {
+            key: "Mod-Shift-l",
+            run: (view) => {
+              console.log("Itemize triggered");
+              return wrapWithLatexEnvironment("itemize")(view);
+            },
+          },
+        ])),
+
+        // 2. Base Setup (Static)
         highlightSpecialChars(),
         history(),
         drawSelection(),
@@ -76,6 +173,8 @@ export function LatexEditor({ className = "" }: EditorProps) {
         rectangularSelection(),
         crosshairCursor(),
         highlightSelectionMatches(),
+        
+        // 3. Standard Editor Keymaps
         keymap.of([
           ...closeBracketsKeymap,
           ...defaultKeymap,
@@ -86,38 +185,14 @@ export function LatexEditor({ className = "" }: EditorProps) {
           ...lintKeymap
         ]),
 
-        // Dynamic Config via Compartment
+        // 4. Dynamic Config via Compartment
         configCompartment.current.of(getConfigExtensions(editorConfig)),
 
         StreamLanguage.define(stex),
         linter(latexLinter),
         lintGutter(),
         oneDark,
-        keymap.of([
-          { key: "Tab", run: acceptCompletion },
-          indentWithTab,
-          // Ctrl/Cmd+S → save + compile
-          {
-            key: "Mod-s",
-            run: () => {
-              compile();
-              return true;
-            },
-          },
-          // Ctrl+G → save + compile (Windows requested shortcut)
-          {
-            key: "Ctrl-g",
-            run: () => {
-              compile();
-              return true;
-            },
-          },
-          // Toggle Comment
-          {
-            key: "Mod-/",
-            run: toggleComment,
-          },
-        ]),
+
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             setContent(update.state.doc.toString());

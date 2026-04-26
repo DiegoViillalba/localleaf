@@ -1,57 +1,89 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import * as pdfjsLib from "pdfjs-dist";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { readFileBytes } from "../../lib/tauri";
 import { useAppStore } from "../../store/useAppStore";
+import { PdfToolbar } from "./PdfToolbar";
+import { LocalLeafPdfCanvasViewer } from "./LocalLeafPdfCanvasViewer";
+import { BrowserPdfViewer } from "./BrowserPdfViewer";
 
-// In production Tauri serves assets from tauri://localhost; in dev from localhost:5173.
-// Vite transforms new URL(..., import.meta.url) to the correct hashed asset path in both cases.
+// Setup pdf.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.mjs",
   import.meta.url
 ).toString();
 
 export function PdfViewer() {
-  const { pdfPath, compileStatus } = useAppStore();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const { 
+    pdfPath, 
+    pdfViewerMode,
+    pdfCurrentPageByPath,
+    setPdfCurrentPage,
+    pdfScaleByPath,
+    setPdfScale,
+  } = useAppStore();
+
   const [pageCount, setPageCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [scale, setScale] = useState<number | "auto">("auto");
-  const [computedScale, setComputedScale] = useState(1.4);
+  const [computedScale, setComputedScale] = useState(1.0);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [docVersion, setDocVersion] = useState(0);
-  const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
   const docRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
 
-  // Load PDF as binary via Tauri command — works in dev and production without asset:// issues
+  // Clean path for store keys
+  const cleanPath = useMemo(() => pdfPath?.split("?")[0] || null, [pdfPath]);
+  
+  // Get persisted state for this PDF
+  const currentPage = (cleanPath && pdfCurrentPageByPath[cleanPath]) || 1;
+  const scale = (cleanPath && pdfScaleByPath[cleanPath]) || "auto";
+
+  // PDF URL for browser mode (convertFileSrc)
+  const pdfUrl = useMemo(() => cleanPath ? convertFileSrc(cleanPath) : null, [cleanPath]);
+
+  // Load PDF for LocalLeaf mode (Canvas)
   useEffect(() => {
-    if (!pdfPath) return;
+    if (!cleanPath) return;
 
     let cancelled = false;
 
     const loadPdf = async () => {
       setLoadError(null);
       try {
-        renderTaskRef.current?.cancel();
+        // Option A: Use URL (Preferred for RAM)
+        // Note: convertFileSrc might require some CORS/Asset configuration in Tauri.
+        // We fall back to Uint8Array if URL fails or for better compatibility in dev.
+        let pdf: pdfjsLib.PDFDocumentProxy;
+        
+        try {
+          // Attempt loading via URL if available
+          if (pdfUrl) {
+            const loadingTask = pdfjsLib.getDocument(pdfUrl);
+            pdf = await loadingTask.promise;
+          } else {
+             throw new Error("No PDF URL available");
+          }
+        } catch (urlErr) {
+          // Fallback to reading bytes (more RAM intensive but reliable)
+          const bytes = await readFileBytes(cleanPath);
+          const data = new Uint8Array(bytes);
+          const loadingTask = pdfjsLib.getDocument({ data });
+          pdf = await loadingTask.promise;
+        }
 
-        const cleanPath = pdfPath.split("?")[0];
-        const bytes = await readFileBytes(cleanPath);
-        const data = new Uint8Array(bytes);
+        if (cancelled) {
+          pdf.destroy();
+          return;
+        }
 
-        const loadingTask = pdfjsLib.getDocument({ data });
-        const pdf = await loadingTask.promise;
-
-        if (cancelled) return;
-
-        // Destroy previous document instance to avoid memory leaks
         if (docRef.current) {
           docRef.current.destroy();
         }
 
         docRef.current = pdf;
         setPageCount(pdf.numPages);
-        setCurrentPage((prev) => Math.min(prev, pdf.numPages) || 1);
-        setDocVersion((v) => v + 1);
+        
+        // Ensure current page is valid for new document
+        if (currentPage > pdf.numPages) {
+          setPdfCurrentPage(cleanPath, pdf.numPages);
+        }
       } catch (err) {
         if (!cancelled) {
           console.error("Error cargando PDF:", err);
@@ -61,179 +93,78 @@ export function PdfViewer() {
     };
 
     loadPdf();
+    
     return () => { 
       cancelled = true; 
       if (docRef.current) {
         docRef.current.destroy();
+        docRef.current = null;
       }
     };
-  }, [pdfPath]);
-
-  // Render the current page whenever page, scale or document changes
-  useEffect(() => {
-    const pdf = docRef.current;
-    const canvas = canvasRef.current;
-    if (!pdf || !canvas) return;
-
-    let cancelled = false;
-
-    const renderPage = async () => {
-      try {
-        renderTaskRef.current?.cancel();
-
-        const page = await pdf.getPage(currentPage);
-        
-        let currentScale = typeof scale === "number" ? scale : 1.4;
-        if (scale === "auto") {
-          const unscaledViewport = page.getViewport({ scale: 1 });
-          const container = containerRef.current;
-          if (container) {
-            const widthScale = (container.clientWidth - 48) / unscaledViewport.width;
-            const heightScale = (container.clientHeight - 48) / unscaledViewport.height;
-            currentScale = Math.min(widthScale, heightScale);
-          }
-        }
-
-        if (cancelled) return;
-        setComputedScale(currentScale);
-
-        const viewport = page.getViewport({ scale: currentScale });
-        const pixelRatio = window.devicePixelRatio || 1;
-
-        canvas.width = Math.floor(viewport.width * pixelRatio);
-        canvas.height = Math.floor(viewport.height * pixelRatio);
-        canvas.style.width = `${Math.floor(viewport.width)}px`;
-        canvas.style.height = `${Math.floor(viewport.height)}px`;
-
-        const ctx = canvas.getContext("2d")!;
-        const transform = pixelRatio !== 1 ? [pixelRatio, 0, 0, pixelRatio, 0, 0] : undefined;
-        
-        const renderTask = page.render({ 
-          canvasContext: ctx, 
-          transform: transform,
-          viewport 
-        });
-        renderTaskRef.current = renderTask;
-
-        await renderTask.promise;
-      } catch (err: unknown) {
-        if (!cancelled && (err as { name?: string }).name !== "RenderingCancelledException") {
-          console.error("Render error:", err);
-        }
-      }
-    };
-
-    renderPage();
-
-    return () => {
-      cancelled = true;
-      renderTaskRef.current?.cancel();
-    };
-  }, [currentPage, scale, pageCount, docVersion]);
-
-  // Handle auto-resize
-  useEffect(() => {
-    if (scale !== "auto") return;
-    const container = containerRef.current;
-    if (!container) return;
-
-    let timeoutId: number;
-    const resizeObserver = new ResizeObserver(() => {
-      clearTimeout(timeoutId);
-      timeoutId = window.setTimeout(() => {
-        setDocVersion((v) => v + 1);
-      }, 150);
-    });
-
-    resizeObserver.observe(container);
-    return () => {
-      resizeObserver.disconnect();
-      clearTimeout(timeoutId);
-    };
-  }, [scale]);
+  }, [cleanPath, pdfUrl]);
 
   const isEmpty = !pdfPath;
 
+  const handlePageChange = (page: number) => {
+    if (cleanPath) {
+      setPdfCurrentPage(cleanPath, page);
+    }
+  };
+
+  const handleScaleChange = (newScale: number | "auto") => {
+    if (cleanPath) {
+      setPdfScale(cleanPath, newScale);
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full bg-zinc-950">
-      {/* Toolbar */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-800 shrink-0">
-        <span className="text-xs text-zinc-500 flex-1">
-          {compileStatus === "compiling" && (
-            <span className="text-emerald-400 animate-pulse">Compilando…</span>
-          )}
-          {compileStatus === "success" && pageCount > 0 && (
-            <span className="text-zinc-400">
-              Pág. {currentPage} / {pageCount}
-            </span>
-          )}
-          {loadError && (
-            <span className="text-red-400 text-xs truncate" title={loadError}>
-              Error al cargar PDF
-            </span>
-          )}
-        </span>
+    <div className="flex flex-col h-full bg-zinc-950 overflow-hidden">
+      <PdfToolbar
+        currentPage={currentPage}
+        pageCount={pageCount}
+        onPageChange={handlePageChange}
+        scale={scale}
+        computedScale={computedScale}
+        onScaleChange={handleScaleChange}
+        pdfPath={pdfPath}
+      />
 
-        {/* Page navigation */}
-        <button
-          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-          disabled={currentPage <= 1}
-          className="px-2 py-0.5 rounded text-xs text-zinc-400 hover:text-zinc-200
-                     disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          ‹
-        </button>
-        <button
-          onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))}
-          disabled={currentPage >= pageCount}
-          className="px-2 py-0.5 rounded text-xs text-zinc-400 hover:text-zinc-200
-                     disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          ›
-        </button>
-
-        {/* Zoom */}
-        <button
-          onClick={() => setScale((s) => Math.max(0.5, (s === "auto" ? computedScale : s) - 0.2))}
-          className="px-2 py-0.5 rounded text-xs text-zinc-400 hover:text-zinc-200"
-        >
-          −
-        </button>
-        <span 
-          className="text-xs text-zinc-500 w-12 text-center cursor-pointer hover:text-zinc-300" 
-          onClick={() => setScale("auto")}
-          title="Ajustar a la ventana"
-        >
-          {Math.round(computedScale * 100)}%
-        </span>
-        <button
-          onClick={() => setScale((s) => Math.min(3, (s === "auto" ? computedScale : s) + 0.2))}
-          className="px-2 py-0.5 rounded text-xs text-zinc-400 hover:text-zinc-200"
-        >
-          +
-        </button>
-      </div>
-
-      {/* Canvas area */}
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-auto flex items-start justify-center p-4"
-        style={{ background: "#1a1a1a" }}
-      >
+      <div className="flex-1 relative flex flex-col overflow-hidden">
         {isEmpty ? (
-          <div className="flex flex-col items-center justify-center h-full gap-3 text-zinc-600">
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-zinc-600 bg-[#1a1a1a]">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
             </svg>
             <p className="text-sm">Compila para ver el PDF</p>
           </div>
+        ) : loadError ? (
+           <div className="flex-1 flex flex-col items-center justify-center gap-2 p-4 text-center bg-[#1a1a1a]">
+             <span className="text-red-400 text-sm font-medium">Error al cargar PDF</span>
+             <p className="text-zinc-500 text-xs max-w-xs break-words">{loadError}</p>
+             <button 
+               onClick={() => window.location.reload()}
+               className="mt-2 px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs rounded"
+             >
+               Reintentar
+             </button>
+           </div>
         ) : (
-          <canvas
-            ref={canvasRef}
-            className="shadow-2xl"
-            style={{ display: "block" }}
-          />
+          <>
+            {pdfViewerMode === "localleaf" ? (
+              <LocalLeafPdfCanvasViewer
+                pdf={docRef.current}
+                currentPage={currentPage}
+                scale={scale}
+                onScaleComputed={setComputedScale}
+              />
+            ) : (
+              <BrowserPdfViewer
+                pdfUrl={pdfUrl}
+                currentPage={currentPage}
+              />
+            )}
+          </>
         )}
       </div>
     </div>

@@ -69,6 +69,12 @@ interface AppState {
     isSidebarCollapsed: boolean;
     isPdfCollapsed: boolean;
   };
+  
+  // PDF Viewer
+  pdfViewerMode: "localleaf" | "browser";
+  pdfCurrentPageByPath: Record<string, number>;
+  pdfScaleByPath: Record<string, number | "auto">;
+  pdfRenderQuality: "low" | "balanced" | "high";
 
   // Diff Viewer
   diffViewer: {
@@ -118,6 +124,12 @@ interface AppState {
   setGitConfig: (cfg: Partial<GitConfig>) => void;
   setAppTheme: (theme: AppState["appTheme"]) => void;
   setCustomThemeColor: (color: string) => void;
+
+  // PDF Viewer Actions
+  setPdfViewerMode: (mode: AppState["pdfViewerMode"]) => void;
+  setPdfCurrentPage: (path: string, page: number) => void;
+  setPdfScale: (path: string, scale: number | "auto") => void;
+  setPdfRenderQuality: (quality: AppState["pdfRenderQuality"]) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -180,6 +192,11 @@ export const useAppStore = create<AppState>()(
     repoUrl: "",
     pat: "",
   },
+  
+  pdfViewerMode: "localleaf",
+  pdfCurrentPageByPath: {},
+  pdfScaleByPath: {},
+  pdfRenderQuality: "balanced",
 
   setWorkspace: (dir, tree, rootPath = null) =>
     set({ workspaceDir: dir, projectTree: tree, rootFilePath: rootPath }),
@@ -256,6 +273,15 @@ export const useAppStore = create<AppState>()(
   setAppTheme: (theme) => set({ appTheme: theme }),
   setCustomThemeColor: (color) => set({ customThemeColor: color }),
 
+  setPdfViewerMode: (mode) => set({ pdfViewerMode: mode }),
+  setPdfCurrentPage: (path, page) => set((s) => ({
+    pdfCurrentPageByPath: { ...s.pdfCurrentPageByPath, [path]: page }
+  })),
+  setPdfScale: (path, scale) => set((s) => ({
+    pdfScaleByPath: { ...s.pdfScaleByPath, [path]: scale }
+  })),
+  setPdfRenderQuality: (quality) => set({ pdfRenderQuality: quality }),
+
     }),
     {
       name: "localleaf-storage",
@@ -268,6 +294,10 @@ export const useAppStore = create<AppState>()(
         gitConfig: state.gitConfig,
         appTheme: state.appTheme,
         customThemeColor: state.customThemeColor,
+        pdfViewerMode: state.pdfViewerMode,
+        pdfCurrentPageByPath: state.pdfCurrentPageByPath,
+        pdfScaleByPath: state.pdfScaleByPath,
+        pdfRenderQuality: state.pdfRenderQuality,
       }),
 
     }
