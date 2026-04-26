@@ -1,13 +1,13 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "LocalLeaf",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "identifier": "com.localleaf.editor",
   "build": {
     "devUrl": "http://localhost:5173",
     "frontendDist": "../frontend/dist",
-    "beforeDevCommand": "npm run dev --prefix ../frontend",
-    "beforeBuildCommand": "npm run build --prefix ../frontend"
+    "beforeDevCommand": "npm run frontend:dev",
+    "beforeBuildCommand": "npm run frontend:build"
   },
   "app": {
     "windows": [

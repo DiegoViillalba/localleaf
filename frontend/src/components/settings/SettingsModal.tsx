@@ -490,7 +490,7 @@ export function SettingsModal() {
             {activeView === "appearance" && "Apariencia y Temas"}
             {activeView === "app" && "Editor"}
             {activeView === "git" && "Control de Versiones"}
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-mono">v0.1.18</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-mono">v0.1.19</span>
           </h2>
           <button
             onClick={() => setIsSettingsOpen(false)}
