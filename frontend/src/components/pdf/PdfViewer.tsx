@@ -35,31 +35,31 @@ export function PdfViewer() {
   const currentPage = (cleanPath && pdfCurrentPageByPath[cleanPath]) || 1;
   const scale = (cleanPath && pdfScaleByPath[cleanPath]) || "auto";
 
-  // PDF URL for browser mode (convertFileSrc)
+  // PDF URL for browser mode (convertFileSrc) — derived from clean path, no timestamp
   const pdfUrl = useMemo(() => cleanPath ? convertFileSrc(cleanPath) : null, [cleanPath]);
+
+  // URL used to load the PDF in pdf.js — includes timestamp to bust Tauri's asset cache on recompile
+  const pdfLoadUrl = useMemo(() => {
+    if (!cleanPath) return null;
+    const baseUrl = convertFileSrc(cleanPath);
+    const qs = pdfPath?.includes("?") ? pdfPath.split("?")[1] : null;
+    return qs ? `${baseUrl}?${qs}` : baseUrl;
+  }, [pdfPath, cleanPath]);
 
   // Load PDF for LocalLeaf mode (Canvas)
   useEffect(() => {
-    if (!cleanPath) return;
+    if (!cleanPath || !pdfLoadUrl) return;
 
     let cancelled = false;
 
     const loadPdf = async () => {
       setLoadError(null);
       try {
-        // Option A: Use URL (Preferred for RAM)
-        // Note: convertFileSrc might require some CORS/Asset configuration in Tauri.
-        // We fall back to Uint8Array if URL fails or for better compatibility in dev.
         let pdf: pdfjsLib.PDFDocumentProxy;
-        
+
         try {
-          // Attempt loading via URL if available
-          if (pdfUrl) {
-            const loadingTask = pdfjsLib.getDocument(pdfUrl);
-            pdf = await loadingTask.promise;
-          } else {
-             throw new Error("No PDF URL available");
-          }
+          const loadingTask = pdfjsLib.getDocument(pdfLoadUrl);
+          pdf = await loadingTask.promise;
         } catch (urlErr) {
           // Fallback to reading bytes (more RAM intensive but reliable)
           const bytes = await readFileBytes(cleanPath);
@@ -79,7 +79,7 @@ export function PdfViewer() {
 
         docRef.current = pdf;
         setPageCount(pdf.numPages);
-        
+
         // Ensure current page is valid for new document
         if (currentPage > pdf.numPages) {
           setPdfCurrentPage(cleanPath, pdf.numPages);
@@ -93,15 +93,15 @@ export function PdfViewer() {
     };
 
     loadPdf();
-    
-    return () => { 
-      cancelled = true; 
+
+    return () => {
+      cancelled = true;
       if (docRef.current) {
         docRef.current.destroy();
         docRef.current = null;
       }
     };
-  }, [cleanPath, pdfUrl]);
+  }, [pdfLoadUrl]);
 
   const isEmpty = !pdfPath;
 
@@ -162,6 +162,7 @@ export function PdfViewer() {
               <BrowserPdfViewer
                 pdfUrl={pdfUrl}
                 currentPage={currentPage}
+                reloadKey={pdfPath}
               />
             )}
           </>
