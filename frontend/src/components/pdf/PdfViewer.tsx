@@ -6,12 +6,11 @@ import { useAppStore } from "../../store/useAppStore";
 import { PdfToolbar } from "./PdfToolbar";
 import { LocalLeafPdfCanvasViewer } from "./LocalLeafPdfCanvasViewer";
 import { BrowserPdfViewer } from "./BrowserPdfViewer";
+// Vite resolves this to the correct asset URL at build time — works in Tauri production
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
-// Setup pdf.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.mjs",
-  import.meta.url
-).toString();
+// Setup pdf.js worker using the Vite-resolved URL (avoids module-import failures in WebView)
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 export function PdfViewer() {
   const { 

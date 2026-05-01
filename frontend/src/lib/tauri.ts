@@ -55,6 +55,17 @@ export const createProject = (
   projectName: string,
 ): Promise<string> => invoke("create_project", { workspaceDir, projectName });
 
+// ─── Bibliography ─────────────────────────────────────────────────────────────
+
+export const fetchBibtexFromDoi = (doi: string): Promise<string> =>
+  invoke("fetch_bibtex_from_doi", { doi });
+
+export const fetchBibtexFromArxiv = (arxivId: string): Promise<string> =>
+  invoke("fetch_bibtex_from_arxiv", { arxivId });
+
+export const fetchBibtexFromIsbn = (isbn: string): Promise<string> =>
+  invoke("fetch_bibtex_from_isbn", { isbn });
+
 // ─── AI ───────────────────────────────────────────────────────────────────────
 
 export const streamAiAssist = (request: AiRequest): Promise<void> =>

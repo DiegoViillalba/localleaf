@@ -8,7 +8,7 @@ export interface ChatMessage {
   content: string;
 }
 
-export type SidebarTab = "files" | "search" | "logs" | "outline" | "ai" | "versions";
+export type SidebarTab = "files" | "search" | "logs" | "outline" | "ai" | "versions" | "bib";
 
 interface AppState {
   // Workspace

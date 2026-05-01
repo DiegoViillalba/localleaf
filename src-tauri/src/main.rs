@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod ai_service;
+mod bib_service;
 mod compiler;
 mod error_parser;
 mod fs_service;
@@ -54,6 +55,9 @@ fn main() {
             fs_service::import_files,
             ai_service::stream_ai_assist,
             ai_service::fetch_available_models,
+            bib_service::fetch_bibtex_from_doi,
+            bib_service::fetch_bibtex_from_arxiv,
+            bib_service::fetch_bibtex_from_isbn,
             git_service::git_init,
             git_service::git_status,
             git_service::git_commit,

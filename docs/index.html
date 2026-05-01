@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="LocalLeaf — Editor LaTeX local, privado y potente. Sin instalación de TeX Live. Con IA integrada." />
+  <meta property="og:title" content="LocalLeaf — Editor LaTeX local" />
+  <meta property="og:description" content="La alternativa a Overleaf que vive en tu equipo. Tectonic integrado, IA, multi-archivo, sin la nube." />
+  <meta property="og:type" content="website" />
+  <title>LocalLeaf — Editor LaTeX local y privado</title>
+
+  <style>
+    /* ── Reset & base ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:         #0c0c0f;
+      --bg-card:    #13131a;
+      --bg-card2:   #1a1a24;
+      --border:     #252530;
+      --border2:    #2e2e3e;
+      --text:       #e8e8f0;
+      --text-muted: #7070a0;
+      --text-dim:   #444460;
+      --em:         #34d399;
+      --em-dark:    #059669;
+      --em-glow:    #34d39930;
+      --radius:     12px;
+      --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --mono: ui-monospace, "SF Mono", Menlo, "Cascadia Code", monospace;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; }
+
+    /* ── Utility ───────────────────────────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    .tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 999px;
+    }
+
+    /* ── Navigation ────────────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      border-bottom: 1px solid var(--border);
+      background: rgba(12,12,15,.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 56px; gap: 32px;
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 700; font-size: 17px; color: var(--text);
+    }
+    .nav-logo svg { color: var(--em); }
+    .nav-links { display: flex; align-items: center; gap: 28px; }
+    .nav-links a {
+      font-size: 13px; color: var(--text-muted);
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta {
+      font-size: 13px; font-weight: 600;
+      padding: 7px 16px; border-radius: 8px;
+      background: var(--em); color: #000;
+      transition: opacity .2s;
+      white-space: nowrap;
+    }
+    .nav-cta:hover { opacity: .85; }
+
+    /* ── Hero ──────────────────────────────────────────────────────── */
+    .hero {
+      padding: 96px 0 80px;
+      position: relative; overflow: hidden;
+      text-align: center;
+    }
+    .hero::before {
+      content: "";
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% -10%,
+        rgba(52,211,153,.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      background: rgba(52,211,153,.1);
+      border: 1px solid rgba(52,211,153,.25);
+      color: var(--em);
+      margin: 0 auto 24px;
+    }
+    .hero h1 {
+      font-size: clamp(42px, 8vw, 80px);
+      font-weight: 800;
+      letter-spacing: -.04em;
+      line-height: 1.05;
+      background: linear-gradient(160deg, #fff 30%, #8888b0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 20px;
+    }
+    .hero h1 span { color: var(--em); -webkit-text-fill-color: var(--em); }
+    .hero-sub {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: var(--text-muted);
+      max-width: 580px; margin: 0 auto 40px;
+      line-height: 1.55;
+    }
+    .hero-actions {
+      display: flex; justify-content: center; flex-wrap: wrap; gap: 12px;
+      margin-bottom: 64px;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 15px; font-weight: 700;
+      padding: 14px 28px; border-radius: 10px;
+      background: var(--em); color: #000;
+      transition: transform .15s, box-shadow .15s;
+      cursor: pointer; border: none;
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 32px rgba(52,211,153,.35);
+    }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 15px; font-weight: 600;
+      padding: 14px 28px; border-radius: 10px;
+      background: transparent;
+      border: 1px solid var(--border2);
+      color: var(--text-muted);
+      transition: border-color .2s, color .2s;
+    }
+    .btn-secondary:hover { border-color: var(--em); color: var(--em); }
+
+    /* ── Editor mockup ─────────────────────────────────────────────── */
+    .mockup-wrap {
+      max-width: 860px; margin: 0 auto;
+      border-radius: 14px; overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 40px 120px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04);
+    }
+    .mockup-bar {
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 14px;
+      background: #161620;
+      border-bottom: 1px solid var(--border);
+    }
+    .mockup-dot { width: 11px; height: 11px; border-radius: 50%; }
+    .mockup-title {
+      margin-left: auto; margin-right: auto;
+      font-size: 11px; color: var(--text-dim); font-family: var(--mono);
+    }
+    .mockup-body {
+      display: grid; grid-template-columns: 44px 240px 1fr 320px;
+      height: 380px;
+      font-family: var(--mono); font-size: 12px;
+    }
+    /* Toolbar */
+    .mock-toolbar {
+      background: #111118; border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; align-items: center;
+      padding: 12px 0; gap: 18px;
+    }
+    .mock-icon { width: 18px; height: 18px; opacity: .35; transition: opacity .2s; }
+    .mock-icon.active { opacity: 1; color: var(--em); }
+    /* Sidebar */
+    .mock-sidebar {
+      background: #0f0f18; border-right: 1px solid var(--border);
+      padding: 0; overflow: hidden;
+    }
+    .mock-sidebar-head {
+      padding: 10px 12px;
+      font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--text-dim); border-bottom: 1px solid var(--border);
+    }
+    .mock-file {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 12px; font-size: 11px; color: var(--text-muted);
+      border-left: 2px solid transparent;
+      cursor: default;
+    }
+    .mock-file.active { color: var(--text); border-left-color: var(--em); background: rgba(52,211,153,.05); }
+    .mock-file-icon { font-size: 10px; font-family: var(--mono); color: var(--em); }
+    /* Editor */
+    .mock-editor {
+      background: #0c0c14; padding: 14px 16px;
+      overflow: hidden; position: relative;
+    }
+    .mock-line { display: flex; gap: 12px; line-height: 1.65; }
+    .mock-ln { color: var(--text-dim); min-width: 22px; text-align: right; user-select: none; }
+    .kw  { color: #c792ea; }
+    .cmd { color: #82aaff; }
+    .arg { color: #c3e88d; }
+    .str { color: var(--em); }
+    .cm  { color: #546e7a; }
+    /* PDF preview */
+    .mock-pdf {
+      background: #1a1a24; border-left: 1px solid var(--border);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 6px; color: var(--text-dim);
+    }
+    .mock-pdf-page {
+      width: 160px; height: 210px; background: white;
+      border-radius: 3px; box-shadow: 0 4px 16px rgba(0,0,0,.4);
+      padding: 16px 14px; display: flex; flex-direction: column; gap: 4px;
+    }
+    .pdf-title { height: 6px; background: #222; border-radius: 2px; width: 80%; }
+    .pdf-sub   { height: 4px; background: #ddd; border-radius: 2px; width: 55%; }
+    .pdf-line  { height: 3px; background: #e8e8e8; border-radius: 1px; }
+    .pdf-line.s { width: 70%; }
+    .pdf-line.m { width: 90%; }
+    .pdf-line.l { width: 100%; }
+
+    /* ── Divider ───────────────────────────────────────────────────── */
+    .divider {
+      height: 1px; background: linear-gradient(to right, transparent, var(--border), transparent);
+    }
+
+    /* ── Section titles ────────────────────────────────────────────── */
+    .section-title {
+      text-align: center; margin-bottom: 56px;
+    }
+    .section-title .eyebrow {
+      font-size: 12px; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--em); margin-bottom: 12px;
+    }
+    .section-title h2 {
+      font-size: clamp(26px, 4vw, 42px); font-weight: 800;
+      letter-spacing: -.03em; color: var(--text); margin-bottom: 14px;
+    }
+    .section-title p {
+      font-size: 16px; color: var(--text-muted);
+      max-width: 540px; margin: 0 auto;
+    }
+
+    /* ── Features ──────────────────────────────────────────────────── */
+    #features { padding: 96px 0; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .feature-card {
+      padding: 32px 28px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      transition: background .2s;
+      position: relative;
+    }
+    .feature-card:hover { background: var(--bg-card2); }
+    .feature-icon {
+      width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 10px;
+      background: rgba(52,211,153,.1);
+      border: 1px solid rgba(52,211,153,.2);
+      color: var(--em);
+      margin-bottom: 18px;
+    }
+    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+
+    /* ── Stats strip ───────────────────────────────────────────────── */
+    .stats-strip {
+      padding: 56px 0;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .stat { text-align: center; padding: 32px 24px; background: var(--bg); }
+    .stat-num { font-size: 42px; font-weight: 800; color: var(--em); letter-spacing: -.04em; }
+    .stat-label { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+    /* ── Downloads ─────────────────────────────────────────────────── */
+    #downloads { padding: 96px 0; }
+    .platform-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .platform-card {
+      padding: 28px 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: border-color .2s, transform .15s;
+    }
+    .platform-card:hover {
+      border-color: var(--em-dark);
+      transform: translateY(-2px);
+    }
+    .platform-card.featured {
+      border-color: rgba(52,211,153,.4);
+      box-shadow: 0 0 0 1px rgba(52,211,153,.1);
+    }
+    .platform-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+    }
+    .platform-icon {
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 9px; background: var(--bg-card2);
+      border: 1px solid var(--border2);
+      color: var(--text-muted);
+    }
+    .platform-name { font-size: 16px; font-weight: 700; }
+    .platform-arch { font-size: 12px; color: var(--text-muted); }
+    .platform-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.55; }
+    .download-btn {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; padding: 12px 16px;
+      border-radius: 8px; font-size: 13px; font-weight: 600;
+      cursor: pointer; border: none; transition: opacity .2s;
+      text-decoration: none;
+    }
+    .download-btn.primary {
+      background: var(--em); color: #000;
+    }
+    .download-btn.secondary {
+      background: var(--bg-card2); color: var(--text-muted);
+      border: 1px solid var(--border2);
+      margin-top: 8px;
+    }
+    .download-btn:hover { opacity: .85; }
+    .download-btn .badge-fmt {
+      font-size: 10px; font-weight: 500; opacity: .7;
+    }
+    .quarantine-note {
+      margin-top: 10px;
+      font-size: 11px; color: var(--text-dim);
+      line-height: 1.5;
+    }
+    .quarantine-note code {
+      font-family: var(--mono); font-size: 10px;
+      background: var(--bg-card2); padding: 2px 5px; border-radius: 4px;
+      color: var(--text-muted);
+    }
+
+    /* ── Requirements ──────────────────────────────────────────────── */
+    .requirements {
+      margin-top: 48px;
+      padding: 20px 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: flex; align-items: flex-start; gap: 12px;
+    }
+    .requirements svg { color: var(--em); flex-shrink: 0; margin-top: 2px; }
+    .requirements p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+    .requirements strong { color: var(--text); }
+
+    /* ── Stack ─────────────────────────────────────────────────────── */
+    #stack { padding: 96px 0; }
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+    }
+    .stack-chip {
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      text-align: center;
+    }
+    .stack-chip .name { font-size: 14px; font-weight: 600; }
+    .stack-chip .role { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+    /* ── Alpha notice ──────────────────────────────────────────────── */
+    .alpha-notice {
+      background: rgba(251,191,36,.06);
+      border: 1px solid rgba(251,191,36,.2);
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      display: flex; align-items: flex-start; gap: 12px;
+      margin-bottom: 48px;
+    }
+    .alpha-notice svg { color: #fbbf24; flex-shrink: 0; margin-top: 1px; }
+    .alpha-notice p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+    .alpha-notice strong { color: #fbbf24; }
+
+    /* ── Footer ────────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+    }
+    .footer-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 20px;
+    }
+    .footer-left { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+    .footer-left .logo { font-weight: 700; }
+    .footer-left .ver { color: var(--text-dim); font-family: var(--mono); font-size: 12px; }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a { font-size: 13px; color: var(--text-muted); transition: color .2s; }
+    .footer-links a:hover { color: var(--text); }
+
+    /* ── Responsive ────────────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .nav-links { display: none; }
+      .mockup-body { grid-template-columns: 44px 1fr; }
+      .mock-sidebar, .mock-pdf { display: none; }
+      .hero { padding: 64px 0 48px; }
+      .stats-strip { grid-template-columns: repeat(2, 1fr); }
+      .footer-inner { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ── Navigation ──────────────────────────────────────────────────────── -->
+<nav>
+  <div class="container nav-inner">
+    <a href="#" class="nav-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/>
+        <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+      </svg>
+      LocalLeaf
+    </a>
+    <div class="nav-links">
+      <a href="#features">Funciones</a>
+      <a href="#downloads">Descargar</a>
+      <a href="#stack">Tecnología</a>
+      <a href="https://github.com/DiegoViillalba/localleaf" target="_blank" rel="noreferrer">GitHub</a>
+    </div>
+    <a href="#downloads" class="nav-cta">Descargar alfa</a>
+  </div>
+</nav>
+
+<!-- ── Hero ────────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="container">
+    <span class="tag hero-badge">
+      <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"><circle cx="4" cy="4" r="4"/></svg>
+      Alfa privada · v0.1.20
+    </span>
+
+    <h1>El editor LaTeX<br/>que vive en <span>tu equipo</span></h1>
+    <p class="hero-sub">
+      LocalLeaf es la alternativa local a Overleaf. Sin nubes, sin suscripciones.
+      Tectonic integrado, IA incluida y compilación en segundos.
+    </p>
+
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="scrollToDownload()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span id="cta-label">Descargar gratis</span>
+      </button>
+      <a href="https://github.com/DiegoViillalba/localleaf" target="_blank" rel="noreferrer" class="btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.579.688.481C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
+        </svg>
+        Ver en GitHub
+      </a>
+    </div>
+
+    <!-- Editor mockup -->
+    <div class="mockup-wrap">
+      <div class="mockup-bar">
+        <div class="mockup-dot" style="background:#ff5f57"></div>
+        <div class="mockup-dot" style="background:#febc2e"></div>
+        <div class="mockup-dot" style="background:#28c840"></div>
+        <span class="mockup-title">LocalLeaf — main.tex</span>
+      </div>
+      <div class="mockup-body">
+        <!-- Sidebar toolbar -->
+        <div class="mock-toolbar">
+          <svg class="mock-icon active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          <svg class="mock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+          <svg class="mock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg>
+          <svg class="mock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <svg class="mock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/></svg>
+        </div>
+        <!-- File tree -->
+        <div class="mock-sidebar">
+          <div class="mock-sidebar-head">Archivos</div>
+          <div class="mock-file active"><span class="mock-file-icon">τ</span> main.tex</div>
+          <div class="mock-file"><span class="mock-file-icon">τ</span> chapters/intro.tex</div>
+          <div class="mock-file"><span class="mock-file-icon">τ</span> chapters/methods.tex</div>
+          <div class="mock-file"><span class="mock-file-icon" style="color:#a78bfa">β</span> references.bib</div>
+          <div class="mock-file"><span class="mock-file-icon" style="color:#60a5fa">□</span> figures/</div>
+        </div>
+        <!-- Code editor -->
+        <div class="mock-editor">
+          <div class="mock-line"><span class="mock-ln">1</span><span class="cm">% Mi artículo de investigación</span></div>
+          <div class="mock-line"><span class="mock-ln">2</span><span class="kw">\documentclass</span><span>[12pt]{</span><span class="arg">article</span><span>}</span></div>
+          <div class="mock-line"><span class="mock-ln">3</span><span class="kw">\usepackage</span><span>[utf8]{</span><span class="arg">inputenc</span><span>}</span></div>
+          <div class="mock-line"><span class="mock-ln">4</span><span class="kw">\usepackage</span><span>{</span><span class="arg">amsmath, amssymb</span><span>}</span></div>
+          <div class="mock-line"><span class="mock-ln">5</span></div>
+          <div class="mock-line"><span class="mock-ln">6</span><span class="kw">\title</span><span>{</span><span class="str">Análisis de redes neuronales</span><span>}</span></div>
+          <div class="mock-line"><span class="mock-ln">7</span><span class="kw">\author</span><span>{García, José and Martínez, Lucía}</span></div>
+          <div class="mock-line"><span class="mock-ln">8</span></div>
+          <div class="mock-line"><span class="mock-ln">9</span><span class="kw">\begin</span><span>{</span><span class="arg">document</span><span>}</span></div>
+          <div class="mock-line"><span class="mock-ln">10</span><span class="kw">\maketitle</span></div>
+          <div class="mock-line"><span class="mock-ln">11</span></div>
+          <div class="mock-line"><span class="mock-ln">12</span><span class="kw">\section</span><span>{Introducción}</span></div>
+          <div class="mock-line"><span class="mock-ln">13</span>Sea <span class="cmd">$f(x) = \frac{1}{\sigma\sqrt{2\pi}}$</span></div>
+          <div class="mock-line"><span class="mock-ln">14</span>como se demuestra en <span class="cmd">\cite</span><span>{</span><span class="str">garcia2024analisis</span><span>}</span>.</div>
+          <div class="mock-line"><span class="mock-ln">15</span></div>
+          <div class="mock-line"><span class="mock-ln">16</span><span class="kw">\input</span><span>{chapters/intro}</span></div>
+        </div>
+        <!-- PDF preview -->
+        <div class="mock-pdf">
+          <div class="mock-pdf-page">
+            <div class="pdf-title"></div>
+            <div class="pdf-sub"></div>
+            <div style="height:8px"></div>
+            <div class="pdf-line l"></div>
+            <div class="pdf-line m"></div>
+            <div class="pdf-line l"></div>
+            <div class="pdf-line s"></div>
+            <div style="height:6px"></div>
+            <div style="height:3px;background:#4ade80;border-radius:1px;width:40%"></div>
+            <div style="height:6px"></div>
+            <div class="pdf-line l"></div>
+            <div class="pdf-line m"></div>
+            <div class="pdf-line l"></div>
+            <div class="pdf-line l"></div>
+            <div class="pdf-line s"></div>
+            <div style="height:6px"></div>
+            <div class="pdf-line l"></div>
+            <div class="pdf-line m"></div>
+            <div class="pdf-line s"></div>
+          </div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:6px">Vista previa PDF</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Stats ────────────────────────────────────────────────────────────── -->
+<div class="stats-strip">
+  <div class="stat">
+    <div class="stat-num">0</div>
+    <div class="stat-label">MB de TeX Live requeridos</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">3</div>
+    <div class="stat-label">Plataformas soportadas</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">∞</div>
+    <div class="stat-label">Archivos por proyecto</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">100%</div>
+    <div class="stat-label">Local · sin nube</div>
+  </div>
+</div>
+
+<!-- ── Features ─────────────────────────────────────────────────────────── -->
+<section id="features">
+  <div class="container">
+    <div class="section-title">
+      <div class="eyebrow">Funcionalidades</div>
+      <h2>Todo lo que necesitas.<br/>Nada que no necesites.</h2>
+      <p>Diseñado para investigadores, estudiantes y escritores que quieren foco, no fricción.</p>
+    </div>
+    <div class="features-grid">
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <h3>Privacidad total</h3>
+        <p>Tu código LaTeX nunca sale de tu equipo. Sin cuentas, sin telemetría, sin sincronización forzada en la nube.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </div>
+        <h3>Tectonic integrado</h3>
+        <p>No necesitas instalar TeX Live ni MiKTeX. Tectonic viene empaquetado y descarga solo los paquetes que usa tu documento.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M12 2a10 10 0 1 0 10 10H12V2z"/>
+            <path d="M12 12 2.1 7.1"/>
+            <path d="M12 12l9.9 4.9"/>
+          </svg>
+        </div>
+        <h3>IA compatible con cualquier proveedor</h3>
+        <p>Conecta OpenAI, Gemini, LM Studio u Ollama. El asistente conoce tu documento y puede corregir errores de compilación automáticamente.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M3 6h18M3 12h18M3 18h18"/>
+          </svg>
+        </div>
+        <h3>Proyectos multi-archivo</h3>
+        <p>Árbol de archivos real con soporte para <code style="font-family:var(--mono);font-size:12px;background:var(--bg-card2);padding:1px 4px;border-radius:3px">\input</code> e <code style="font-family:var(--mono);font-size:12px;background:var(--bg-card2);padding:1px 4px;border-radius:3px">\include</code>. Define el archivo raíz y edita cualquier subarchivo sin perder el contexto.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+        </div>
+        <h3>Gestión de bibliografía</h3>
+        <p>Importa referencias por DOI, arXiv o ISBN con un clic. Edita tus entradas BibTeX con una interfaz amigable y validación en tiempo real.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+          </svg>
+        </div>
+        <h3>Editor con superpoderes</h3>
+        <p>CodeMirror 6 con resaltado LaTeX, autocompletado de comandos, linter de entornos <code style="font-family:var(--mono);font-size:12px;background:var(--bg-card2);padding:1px 4px;border-radius:3px">\begin/\end</code> y navegación por el esquema del documento.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── Downloads ─────────────────────────────────────────────────────────── -->
+<section id="downloads">
+  <div class="container">
+    <div class="section-title">
+      <div class="eyebrow">Descargas</div>
+      <h2>Elige tu plataforma</h2>
+      <p>Instaladores nativos para macOS y Windows. Sin instalación de dependencias adicionales.</p>
+    </div>
+
+    <div class="alpha-notice">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <p>
+        <strong>Alfa privada.</strong> Esta versión es para testers invitados.
+        Puede contener bugs y funciones incompletas. Tu feedback es clave para mejorar el producto.
+        Reporta problemas en <a href="https://github.com/DiegoViillalba/localleaf/issues" style="color:var(--em)">GitHub Issues</a>.
+      </p>
+    </div>
+
+    <div class="platform-grid">
+
+      <!-- macOS Apple Silicon -->
+      <div class="platform-card featured">
+        <div class="platform-header">
+          <div class="platform-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="platform-name">macOS</div>
+            <div class="platform-arch">Apple Silicon (M1, M2, M3, M4)</div>
+          </div>
+        </div>
+        <p class="platform-desc">
+          Optimizado para chips Apple Silicon. Rendimiento nativo en todos los Macs modernos.
+        </p>
+        <a class="download-btn primary"
+          href="https://github.com/DiegoViillalba/localleaf/releases/latest/download/LocalLeaf_0.1.20_aarch64.dmg"
+          id="btn-arm">
+          <span>Descargar .dmg</span>
+          <span class="badge-fmt">Apple Silicon</span>
+        </a>
+        <p class="quarantine-note">
+          Si macOS bloquea la app: <strong>Ajustes → Privacidad y Seguridad → Abrir igualmente</strong>
+          <br/>O ejecuta: <code>xattr -dr com.apple.quarantine /Applications/LocalLeaf.app</code>
+        </p>
+      </div>
+
+      <!-- macOS Intel -->
+      <div class="platform-card">
+        <div class="platform-header">
+          <div class="platform-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="platform-name">macOS</div>
+            <div class="platform-arch">Intel (x86_64)</div>
+          </div>
+        </div>
+        <p class="platform-desc">
+          Compatible con Macs de 2020 y anteriores con procesador Intel.
+        </p>
+        <a class="download-btn primary"
+          href="https://github.com/DiegoViillalba/localleaf/releases/latest/download/LocalLeaf_0.1.20_x64.dmg">
+          <span>Descargar .dmg</span>
+          <span class="badge-fmt">Intel x64</span>
+        </a>
+        <p class="quarantine-note">
+          Mismas instrucciones de apertura que en Apple Silicon.
+        </p>
+      </div>
+
+      <!-- Windows -->
+      <div class="platform-card">
+        <div class="platform-header">
+          <div class="platform-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
+            </svg>
+          </div>
+          <div>
+            <div class="platform-name">Windows</div>
+            <div class="platform-arch">x64 (Windows 10/11)</div>
+          </div>
+        </div>
+        <p class="platform-desc">
+          Instalador NSIS y paquete MSI disponibles. Requiere Windows 10 64-bit o superior y WebView2.
+        </p>
+        <a class="download-btn primary"
+          href="https://github.com/DiegoViillalba/localleaf/releases/latest/download/LocalLeaf_0.1.20_x64-setup.exe">
+          <span>Descargar .exe</span>
+          <span class="badge-fmt">Instalador NSIS</span>
+        </a>
+        <a class="download-btn secondary"
+          href="https://github.com/DiegoViillalba/localleaf/releases/latest/download/LocalLeaf_0.1.20_x64_en-US.msi">
+          <span>Descargar .msi</span>
+          <span class="badge-fmt">Paquete MSI</span>
+        </a>
+      </div>
+
+    </div>
+
+    <div class="requirements">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <p>
+        <strong>Sin instalaciones adicionales.</strong>
+        LocalLeaf incluye el motor LaTeX <strong>Tectonic</strong> dentro del propio instalador.
+        Los paquetes LaTeX se descargan automáticamente la primera vez que compilas (requiere conexión a internet).
+        Las compilaciones posteriores son completamente offline.
+      </p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── Stack ─────────────────────────────────────────────────────────────── -->
+<section id="stack">
+  <div class="container">
+    <div class="section-title">
+      <div class="eyebrow">Tecnología</div>
+      <h2>Construido con las mejores herramientas</h2>
+      <p>Una base sólida para garantizar rendimiento, privacidad y extensibilidad.</p>
+    </div>
+    <div class="stack-grid">
+      <div class="stack-chip"><div class="name">Tauri 2</div><div class="role">Desktop runtime</div></div>
+      <div class="stack-chip"><div class="name">Rust</div><div class="role">Backend nativo</div></div>
+      <div class="stack-chip"><div class="name">React 18</div><div class="role">Interfaz</div></div>
+      <div class="stack-chip"><div class="name">TypeScript</div><div class="role">Tipado</div></div>
+      <div class="stack-chip"><div class="name">CodeMirror 6</div><div class="role">Editor</div></div>
+      <div class="stack-chip"><div class="name">pdf.js</div><div class="role">Preview PDF</div></div>
+      <div class="stack-chip"><div class="name">Tectonic</div><div class="role">Motor LaTeX</div></div>
+      <div class="stack-chip"><div class="name">Zustand</div><div class="role">Estado global</div></div>
+      <div class="stack-chip"><div class="name">Tailwind 3</div><div class="role">Estilos</div></div>
+      <div class="stack-chip"><div class="name">OpenAI API</div><div class="role">IA compatible</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ────────────────────────────────────────────────────────────── -->
+<footer>
+  <div class="container footer-inner">
+    <div class="footer-left">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--em)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/>
+        <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+      </svg>
+      <span class="logo">LocalLeaf</span>
+      <span class="ver">v0.1.20 · alfa</span>
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/DiegoViillalba/localleaf" target="_blank" rel="noreferrer">GitHub</a>
+      <a href="https://github.com/DiegoViillalba/localleaf/issues" target="_blank" rel="noreferrer">Reportar bug</a>
+      <a href="https://github.com/DiegoViillalba/localleaf/releases" target="_blank" rel="noreferrer">Releases</a>
+      <a href="README.md">Docs</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ── OS detection for primary CTA ──────────────────────────────────────────
+  (function() {
+    const ua = navigator.userAgent;
+    const label = document.getElementById('cta-label');
+    if (!label) return;
+    if (/Windows/.test(ua))                      label.textContent = 'Descargar para Windows';
+    else if (/Mac/.test(ua))                     label.textContent = 'Descargar para macOS';
+    else                                         label.textContent = 'Ver todas las descargas';
+  })();
+
+  function scrollToDownload() {
+    document.getElementById('downloads').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // ── Highlight the featured card based on OS ────────────────────────────────
+  (function() {
+    const ua = navigator.userAgent;
+    const cards = document.querySelectorAll('.platform-card');
+    cards.forEach(c => c.classList.remove('featured'));
+    if (/Windows/.test(ua) && cards[2]) cards[2].classList.add('featured');
+    else if (/Mac/.test(ua) && cards[0]) cards[0].classList.add('featured');
+  })();
+
+  // ── Smooth scroll for anchor links ────────────────────────────────────────
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+    });
+  });
+</script>
+
+</body>
+</html>
