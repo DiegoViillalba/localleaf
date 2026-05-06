@@ -558,7 +558,7 @@
     <div class="stat-label">MB de TeX Live requeridos</div>
   </div>
   <div class="stat">
-    <div class="stat-num">3</div>
+    <div class="stat-num">4</div>
     <div class="stat-label">Plataformas soportadas</div>
   </div>
   <div class="stat">
@@ -656,7 +656,7 @@
     <div class="section-title">
       <div class="eyebrow">Descargas</div>
       <h2>Elige tu plataforma</h2>
-      <p>Instaladores nativos para macOS y Windows. Sin instalación de dependencias adicionales.</p>
+      <p>Instaladores nativos para macOS, Windows y Linux. Sin instalación de dependencias adicionales.</p>
     </div>
 
     <div class="alpha-notice">
@@ -671,10 +671,15 @@
       </p>
     </div>
 
-    <div class="platform-grid">
+    <!-- Loading state -->
+    <div id="dl-loading" style="text-align:center;padding:32px;color:var(--muted);font-size:13px;">
+      Cargando última versión…
+    </div>
+
+    <div class="platform-grid" id="platform-grid" style="display:none">
 
       <!-- macOS Apple Silicon -->
-      <div class="platform-card featured">
+      <div class="platform-card featured" data-os="mac">
         <div class="platform-header">
           <div class="platform-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
@@ -689,9 +694,8 @@
         <p class="platform-desc">
           Optimizado para chips Apple Silicon. Rendimiento nativo en todos los Macs modernos.
         </p>
-        <a class="download-btn primary"
-          href="https://github.com/DiegoViillalba/localleaf/releases/tag/v0.1.21/LocalLeaf_0.1.20_aarch64.dmg"
-          id="btn-arm">
+        <a class="download-btn primary" id="dl-mac-arm"
+          href="https://github.com/DiegoViillalba/localleaf/releases/latest">
           <span>Descargar .dmg</span>
           <span class="badge-fmt">Apple Silicon</span>
         </a>
@@ -702,7 +706,7 @@
       </div>
 
       <!-- macOS Intel -->
-      <div class="platform-card">
+      <div class="platform-card" data-os="mac">
         <div class="platform-header">
           <div class="platform-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
@@ -717,8 +721,8 @@
         <p class="platform-desc">
           Compatible con Macs de 2020 y anteriores con procesador Intel.
         </p>
-        <a class="download-btn primary"
-          href="https://github.com/DiegoViillalba/localleaf/releases/tag/v0.1.21/LocalLeaf_0.1.20_x64.dmg">
+        <a class="download-btn primary" id="dl-mac-intel"
+          href="https://github.com/DiegoViillalba/localleaf/releases/latest">
           <span>Descargar .dmg</span>
           <span class="badge-fmt">Intel x64</span>
         </a>
@@ -728,7 +732,7 @@
       </div>
 
       <!-- Windows -->
-      <div class="platform-card">
+      <div class="platform-card" data-os="win">
         <div class="platform-header">
           <div class="platform-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
@@ -743,19 +747,60 @@
         <p class="platform-desc">
           Instalador NSIS y paquete MSI disponibles. Requiere Windows 10 64-bit o superior y WebView2.
         </p>
-        <a class="download-btn primary"
-          href="https://github.com/DiegoViillalba/localleaf/releases/tag/v0.1.21/LocalLeaf_0.1.20_x64-setup.exe">
+        <a class="download-btn primary" id="dl-win-exe"
+          href="https://github.com/DiegoViillalba/localleaf/releases/latest">
           <span>Descargar .exe</span>
           <span class="badge-fmt">Instalador NSIS</span>
         </a>
-        <a class="download-btn secondary"
-          href="https://github.com/DiegoViillalba/localleaf/releases/tag/v0.1.21/LocalLeaf_0.1.20_x64_en-US.msi">
+        <a class="download-btn secondary" id="dl-win-msi"
+          href="https://github.com/DiegoViillalba/localleaf/releases/latest">
           <span>Descargar .msi</span>
           <span class="badge-fmt">Paquete MSI</span>
         </a>
       </div>
 
+      <!-- Linux -->
+      <div class="platform-card" data-os="linux">
+        <div class="platform-header">
+          <div class="platform-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+              <!-- Tux-like simple penguin icon fallback -->
+            </svg>
+            <!-- Better Linux icon -->
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="display:none">
+            </svg>
+          </div>
+          <div>
+            <div class="platform-name">Linux</div>
+            <div class="platform-arch">x86_64 (Ubuntu, Debian, Fedora…)</div>
+          </div>
+        </div>
+        <p class="platform-desc">
+          AppImage portable (sin instalación) o paquete .deb para distribuciones basadas en Debian/Ubuntu.
+        </p>
+        <a class="download-btn primary" id="dl-linux-appimage"
+          href="https://github.com/DiegoViillalba/localleaf/releases/latest">
+          <span>Descargar .AppImage</span>
+          <span class="badge-fmt">Portable</span>
+        </a>
+        <a class="download-btn secondary" id="dl-linux-deb"
+          href="https://github.com/DiegoViillalba/localleaf/releases/latest">
+          <span>Descargar .deb</span>
+          <span class="badge-fmt">Debian / Ubuntu</span>
+        </a>
+        <p class="quarantine-note">
+          AppImage: <code>chmod +x LocalLeaf*.AppImage && ./LocalLeaf*.AppImage</code>
+        </p>
+      </div>
+
     </div>
+
+    <!-- Version tag shown after loading -->
+    <p id="dl-version" style="text-align:center;font-size:11px;color:var(--muted);margin-top:12px;display:none">
+      Versión <span id="dl-version-tag">—</span> ·
+      <a href="https://github.com/DiegoViillalba/localleaf/releases" style="color:var(--em)">Ver todos los releases</a>
+    </p>
 
     <div class="requirements">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -819,36 +864,95 @@
 </footer>
 
 <script>
-  // ── OS detection for primary CTA ──────────────────────────────────────────
-  (function() {
-    const ua = navigator.userAgent;
-    const label = document.getElementById('cta-label');
-    if (!label) return;
-    if (/Windows/.test(ua))                      label.textContent = 'Descargar para Windows';
-    else if (/Mac/.test(ua))                     label.textContent = 'Descargar para macOS';
-    else                                         label.textContent = 'Ver todas las descargas';
-  })();
-
+  // ── Smooth scroll ─────────────────────────────────────────────────────────
   function scrollToDownload() {
     document.getElementById('downloads').scrollIntoView({ behavior: 'smooth' });
   }
-
-  // ── Highlight the featured card based on OS ────────────────────────────────
-  (function() {
-    const ua = navigator.userAgent;
-    const cards = document.querySelectorAll('.platform-card');
-    cards.forEach(c => c.classList.remove('featured'));
-    if (/Windows/.test(ua) && cards[2]) cards[2].classList.add('featured');
-    else if (/Mac/.test(ua) && cards[0]) cards[0].classList.add('featured');
-  })();
-
-  // ── Smooth scroll for anchor links ────────────────────────────────────────
   document.querySelectorAll('a[href^="#"]').forEach(a => {
     a.addEventListener('click', e => {
       const target = document.querySelector(a.getAttribute('href'));
       if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
     });
   });
+
+  // ── OS detection ──────────────────────────────────────────────────────────
+  const ua = navigator.userAgent;
+  const isWin   = /Windows/.test(ua);
+  const isMac   = /Mac/.test(ua) && !/iPhone|iPad/.test(ua);
+  const isLinux = /Linux/.test(ua) && !/Android/.test(ua);
+
+  (function updateCTA() {
+    const label = document.getElementById('cta-label');
+    if (!label) return;
+    if (isWin)        label.textContent = 'Descargar para Windows';
+    else if (isMac)   label.textContent = 'Descargar para macOS';
+    else if (isLinux) label.textContent = 'Descargar para Linux';
+    else              label.textContent = 'Ver todas las descargas';
+  })();
+
+  // ── Fetch latest release from GitHub API and wire up download buttons ─────
+  (async function loadRelease() {
+    const REPO    = 'DiegoViillalba/localleaf';
+    const FALLBACK = `https://github.com/${REPO}/releases/latest`;
+
+    const find = (assets, re) => assets.find(a => re.test(a.name));
+
+    try {
+      const res = await fetch(`https://api.github.com/repos/${REPO}/releases?per_page=5`, {
+        headers: { Accept: 'application/vnd.github+json' }
+      });
+      if (!res.ok) throw new Error('API error');
+
+      const releases = await res.json();
+      // Find the first non-draft release (prerelease ok)
+      const release = Array.isArray(releases)
+        ? releases.find(r => !r.draft)
+        : null;
+
+      if (!release) throw new Error('No release available');
+
+      const assets  = release.assets || [];
+      const tag     = release.tag_name;
+
+      // Wire up each button to the correct asset URL
+      const map = {
+        'dl-mac-arm':        find(assets, /aarch64\.dmg$/i),
+        'dl-mac-intel':      find(assets, /_x64\.dmg$/i),
+        'dl-win-exe':        find(assets, /x64-setup\.exe$/i),
+        'dl-win-msi':        find(assets, /en-US\.msi$/i),
+        'dl-linux-appimage': find(assets, /\.AppImage$/i),
+        'dl-linux-deb':      find(assets, /\.deb$/i),
+      };
+
+      for (const [id, asset] of Object.entries(map)) {
+        const el = document.getElementById(id);
+        if (el) el.href = asset ? asset.browser_download_url : FALLBACK;
+      }
+
+      // Show version tag
+      const vTag = document.getElementById('dl-version-tag');
+      if (vTag) vTag.textContent = tag;
+      const vEl = document.getElementById('dl-version');
+      if (vEl) vEl.style.display = 'block';
+
+      // Update footer version
+      const footerVer = document.querySelector('.ver');
+      if (footerVer) footerVer.textContent = `${tag} · alfa`;
+
+    } catch (_) {
+      // API failed — buttons already point to FALLBACK (releases/latest page)
+    }
+
+    // Show grid regardless
+    document.getElementById('dl-loading').style.display  = 'none';
+    document.getElementById('platform-grid').style.display = '';
+
+    // Highlight the card that matches the user's OS
+    document.querySelectorAll('.platform-card').forEach(c => c.classList.remove('featured'));
+    if (isWin)        document.querySelector('[data-os="win"]')?.classList.add('featured');
+    else if (isMac)   document.querySelector('[data-os="mac"]')?.classList.add('featured');
+    else if (isLinux) document.querySelector('[data-os="linux"]')?.classList.add('featured');
+  })();
 </script>
 
 </body>

@@ -1,125 +1,171 @@
+<div align="center">
+
+<img src="docs/icon.png" alt="LocalLeaf" width="80" height="80" />
+
 # LocalLeaf
 
-Editor LaTeX de escritorio, local-first y open-source. Alternativa a Overleaf que corre completamente en tu máquina.
+**Editor LaTeX de escritorio, local-first y open-source.**  
+Alternativa a Overleaf que corre completamente en tu máquina — sin nube, sin suscripción, sin límites.
+
+[![Última versión](https://img.shields.io/github/v/release/DiegoViillalba/localleaf?include_prereleases&style=flat-square&color=34d399&label=versión)](https://github.com/DiegoViillalba/localleaf/releases/latest)
+[![Plataformas](https://img.shields.io/badge/plataformas-macOS%20·%20Windows%20·%20Linux-34d399?style=flat-square)](https://github.com/DiegoViillalba/localleaf/releases)
+[![Estado](https://img.shields.io/badge/estado-alfa%20privada-f59e0b?style=flat-square)](https://github.com/DiegoViillalba/localleaf/releases)
+[![Licencia](https://img.shields.io/github/license/DiegoViillalba/localleaf?style=flat-square&color=71717a)](LICENSE)
+
+[**Descargar**](https://github.com/DiegoViillalba/localleaf/releases/latest) · [**Reportar un bug**](https://github.com/DiegoViillalba/localleaf/issues/new) · [**Página web**](https://diegoviillalba.github.io/localleaf)
+
+</div>
 
 ---
 
-## Stack
+## ¿Qué es LocalLeaf?
 
-| Capa | Tecnología |
+LocalLeaf es un editor LaTeX nativo para macOS, Windows y Linux construido con **Tauri 2 + Rust + React**. Compila documentos con **Tectonic** (sin instalar TeX Live) y muestra el PDF directamente en la app. Todo el procesamiento ocurre en tu máquina — tus documentos nunca salen de ella.
+
+### Características principales
+
+| | |
 |---|---|
-| Desktop | **Tauri 2** (Rust) |
-| Frontend | Vite 5 + React 18 + TypeScript |
-| Editor | CodeMirror 6 + `@codemirror/legacy-modes` (modo `stex`) |
-| UI | Tailwind CSS 3 |
-| PDF | pdfjs-dist 4 |
-| LaTeX | Tectonic CLI |
-| Estado | Zustand 4 |
-| IA | Cualquier API compatible con OpenAI (streaming SSE) |
+| 🌿 **100% local** | Tus archivos y tu privacidad son tuyos. Sin servidores, sin sincronización forzada. |
+| ⚡ **Tectonic integrado** | Motor LaTeX moderno incluido en el instalador. No necesitas TeX Live ni MikTeX. |
+| 📄 **Vista previa instantánea** | PDF renderizado con pdf.js, actualizado automáticamente tras cada compilación. |
+| 🤖 **IA integrada** | Compatible con OpenAI, Groq, Ollama y cualquier API OpenAI-compatible (tu propia key). |
+| 📚 **Gestión de bibliografía** | Panel visual para editar archivos `.bib` — importa referencias desde DOI, arXiv o ISBN. |
+| 🗂️ **Multi-archivo** | Explorador de proyectos completo con árbol de archivos, búsqueda y navegación por esquema. |
+| 🔄 **Control de versiones** | Historial de versiones integrado con Git (init, commit, log, diff, push/pull). |
+| 🌙 **Dark mode nativo** | Interfaz oscura optimizada para trabajo prolongado. |
 
 ---
 
-## Requisitos previos
+## Para testers — Instalación rápida
 
-### Rust + Tauri CLI
+> **Alfa privada.** Esta versión puede contener bugs y funciones incompletas. Tu feedback es lo más valioso que puedes aportar.
 
+### 1. Descarga el instalador
+
+Elige tu plataforma en la [página de releases](https://github.com/DiegoViillalba/localleaf/releases/latest):
+
+| Plataforma | Archivo |
+|---|---|
+| macOS Apple Silicon (M1–M4) | `LocalLeaf_x.x.x_aarch64.dmg` |
+| macOS Intel | `LocalLeaf_x.x.x_x64.dmg` |
+| Windows 10/11 | `LocalLeaf_x.x.x_x64-setup.exe` |
+| Linux (AppImage) | `LocalLeaf_x.x.x_amd64.AppImage` |
+| Linux (Debian/Ubuntu) | `localleaf_x.x.x_amd64.deb` |
+
+### 2. Instala y abre
+
+**macOS** — arrastra la app a `/Applications`. Si Gatekeeper bloquea la apertura:
+```
+Ajustes del sistema → Privacidad y Seguridad → Abrir igualmente
+```
+O por terminal:
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-cargo install tauri-cli --version "^2"
+xattr -dr com.apple.quarantine /Applications/LocalLeaf.app
 ```
 
-### Node.js ≥ 18
+**Windows** — ejecuta el `.exe` como instalador normal. Si SmartScreen lo bloquea, haz clic en "Más información → Ejecutar de todas formas".
 
+**Linux (AppImage)**:
 ```bash
-nvm install 20 && nvm use 20
+chmod +x LocalLeaf_*.AppImage
+./LocalLeaf_*.AppImage
 ```
 
-### Tectonic (motor LaTeX)
-
+**Linux (deb)**:
 ```bash
-# macOS
-brew install tectonic
-
-# Linux — binario precompilado
-curl --proto '=https' --tlsv1.2 -fsSL https://drop.Fuller.li/tectonic/install.sh | sh
-
-# Windows — descarga el binario desde https://tectonic-typesetting.github.io
+sudo dpkg -i localleaf_*.deb
 ```
 
-> Tectonic descarga los paquetes LaTeX que necesita automáticamente en el primer uso.
-> No hace falta instalar TeX Live ni MikTeX.
+### 3. Reporta bugs
+
+Por favor usa [GitHub Issues](https://github.com/DiegoViillalba/localleaf/issues/new) e incluye:
+- Sistema operativo y versión
+- Qué acción realizaste
+- Qué esperabas que pasara vs. qué pasó
+- Logs si los hay (menú de compilación en la barra lateral)
 
 ---
 
-## Instalación
+## Uso básico
 
-```bash
-git clone https://github.com/tu-usuario/localleaf
-cd localleaf/frontend
-npm install
+```
+1. Abrir carpeta   → ícono de carpeta en la barra lateral
+2. Nuevo proyecto  → botón "+" → escribe el nombre → Enter
+                     (crea main.tex con template listo)
+3. Editar          → editor con syntax highlighting LaTeX
+4. Compilar        → Cmd/Ctrl+S o botón "Compilar"
+5. Ver PDF         → panel derecho, actualización automática
+6. Bibliografía    → pestaña de libro en la barra lateral
+7. IA              → pestaña ✦ → configura tu API key
 ```
 
----
+### Asistente IA
 
-## Desarrollo
+Funciona con cualquier API compatible con OpenAI:
 
-```bash
-# Terminal 1 — Vite (hay que arrancarlo primero)
-cd frontend && npm run dev
-
-# Terminal 2 — Tauri + Rust
-cd src-tauri && cargo tauri dev
-```
-
-El frontend corre en `http://localhost:5173`. Tauri lo envuelve en una ventana nativa.
-Cualquier cambio en `.tsx`/`.ts` hace hot-reload instantáneo. Cambios en `.rs` requieren que Cargo recompile (unos segundos).
-
----
-
-## Build de producción
-
-```bash
-cd src-tauri && cargo tauri build
-```
-
-El instalador queda en `src-tauri/target/release/bundle/`  
-(`.dmg` en macOS, `.AppImage`/`.deb` en Linux, `.msi` en Windows).
-
----
-
-## Uso
-
-### Flujo básico
-
-1. **Abrir carpeta** — clic en `⊕` en el sidebar
-2. **Nuevo proyecto** — clic en `✦` (aparece cuando hay carpeta abierta); escribe el nombre y pulsa Enter. Se crea `nombre/main.tex` con un template listo
-3. **Abrir archivo** — clic en cualquier `.tex` en el explorador
-4. **Editar** — editor con syntax highlighting para LaTeX
-5. **Compilar** — `Cmd/Ctrl+S` o el botón "Compilar"
-6. **Ver PDF** — se renderiza automáticamente a la derecha y se recarga con cada compilación
-7. **Errores** — panel inferior muestra errores limpios de Tectonic
-
-### AI Assist
-
-1. Clic en `✦ IA` en la barra inferior → panel de configuración
-2. Introduce tu **API Key** y **modelo** (por defecto `gpt-4o`)
-3. **Selecciona texto** en el editor
-4. Clic en **✦ AI Assist** en la barra del editor
-5. Los tokens llegan en streaming; elige **Insertar** o **Descartar**
-
-#### Proveedores compatibles
-
-| Proveedor | Provider URL |
+| Proveedor | URL base |
 |---|---|
 | OpenAI | `https://api.openai.com/v1` |
 | Groq | `https://api.groq.com/openai/v1` |
 | Ollama (local) | `http://localhost:11434/v1` |
 | LM Studio | `http://localhost:1234/v1` |
+| Anthropic (via proxy) | tu endpoint compatible |
 
-### Auto-save
+---
 
-El documento se guarda automáticamente 5 segundos después del último cambio.
-El indicador `●` amarillo en la barra inferior señala cambios sin guardar.
+## Para desarrolladores
+
+### Requisitos
+
+- **Rust** ≥ 1.77 + `cargo`
+- **Node.js** ≥ 18
+- **Tectonic** (solo para compilar LaTeX en dev — la app lo incluye en producción)
+
+```bash
+# Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Node.js (con nvm)
+nvm install 20 && nvm use 20
+
+# Tectonic
+brew install tectonic           # macOS
+cargo install tectonic          # cualquier plataforma
+
+# Linux — dependencias del sistema
+sudo apt-get install libgtk-3-dev libwebkit2gtk-4.1-dev \
+  libayatana-appindicator3-dev librsvg2-dev patchelf
+```
+
+### Setup
+
+```bash
+git clone https://github.com/DiegoViillalba/localleaf
+cd localleaf/frontend && npm install
+```
+
+### Desarrollo
+
+```bash
+# Terminal 1 — frontend Vite (arrancar primero)
+cd frontend && npm run dev
+
+# Terminal 2 — Tauri + Rust
+cd .. && cargo tauri dev
+```
+
+Cambios en `.tsx`/`.ts` → hot-reload instantáneo.  
+Cambios en `.rs` → Cargo recompila (unos segundos).
+
+### Build de producción
+
+```bash
+cd frontend && npm run build
+cd .. && cargo tauri build
+```
+
+Instaladores en `src-tauri/target/release/bundle/`.
 
 ---
 
@@ -127,175 +173,88 @@ El indicador `●` amarillo en la barra inferior señala cambios sin guardar.
 
 ```
 localleaf/
+├── src-tauri/                    # Backend Rust
+│   └── src/
+│       ├── main.rs               # Entry point — registra plugins y comandos
+│       ├── compiler.rs           # Invoca Tectonic; retorna CompileResult
+│       ├── fs_service.rs         # Operaciones de archivo (read, save, scan…)
+│       ├── ai_service.rs         # Streaming SSE → LLM compatible con OpenAI
+│       ├── bib_service.rs        # Fetch BibTeX desde DOI / arXiv / ISBN
+│       ├── git_service.rs        # Operaciones Git (init, commit, log, diff…)
+│       └── error_parser.rs       # Parsea logs de Tectonic → errores legibles
 │
-├── src-tauri/                      # Backend Rust (proceso nativo)
-│   ├── src/
-│   │   ├── main.rs                 # Entry point Tauri 2; registra plugins y comandos
-│   │   ├── compiler.rs             # Invoca Tectonic CLI; retorna CompileResult
-│   │   ├── fs_service.rs           # read_file, read_file_bytes, save_file,
-│   │   │                           #   list_directory, open_folder_dialog, create_project
-│   │   ├── ai_service.rs           # Streaming SSE hacia cualquier API OpenAI-compatible
-│   │   └── error_parser.rs         # Transforma logs de Tectonic en errores legibles
-│   ├── capabilities/
-│   │   └── default.json            # Permisos Tauri 2 (fs, dialog, shell, scopes)
-│   ├── Cargo.toml
-│   └── tauri.conf.json             # Ventana, CSP, bundle icons
-│
-└── frontend/                       # Frontend React (WebView)
-    ├── src/
-    │   ├── App.tsx                 # Layout raíz: sidebar | editor+errores | pdf
-    │   ├── main.tsx                # ReactDOM.createRoot
-    │   ├── index.css               # Reset global + Tailwind base
-    │   │
-    │   ├── types/index.ts          # FileEntry, CompileResult, LaTeXError,
-    │   │                           #   AiConfig, AiRequest, CompileStatus, AiStatus
-    │   │
-    │   ├── store/
-    │   │   └── useAppStore.ts      # Zustand — única fuente de verdad del estado
-    │   │
-    │   ├── lib/
-    │   │   └── tauri.ts            # Wrappers tipados de invoke() y listen()
-    │   │                           #   (toda la comunicación con Rust pasa por aquí)
-    │   │
-    │   ├── hooks/
-    │   │   ├── useAutoSave.ts      # Debounce 5 s → save automático
-    │   │   ├── useCompile.ts       # save → tectonic → setPdfPath con timestamp
-    │   │   └── useAiAssist.ts      # Inicia stream, escucha ai-token / ai-done
-    │   │
-    │   └── components/
-    │       ├── editor/
-    │       │   └── LatexEditor.tsx # CodeMirror 6, oneDark, stex, Cmd+S compila
-    │       ├── pdf/
-    │       │   └── PdfViewer.tsx   # Carga PDF como bytes vía Rust; renderiza con pdf.js
-    │       ├── sidebar/
-    │       │   └── Sidebar.tsx     # Explorador de archivos + botón nuevo proyecto
-    │       └── ui/
-    │           ├── ErrorPanel.tsx      # Lista errores/warnings de compilación
-    │           ├── StatusBar.tsx       # Ruta activa, dirty flag, estado compilación, IA
-    │           └── TectonicBanner.tsx  # Aviso si Tectonic no está en PATH
-    │
-    ├── vite.config.ts
-    ├── tailwind.config.js
-    ├── tsconfig.json
-    └── package.json
+└── frontend/                     # React + TypeScript (WebView)
+    └── src/
+        ├── store/useAppStore.ts  # Zustand — estado global único
+        ├── lib/
+        │   ├── tauri.ts          # Wrappers tipados de invoke() y listen()
+        │   └── bibtex.ts         # Parser/serializer BibTeX puro en TypeScript
+        ├── hooks/                # useAutoSave, useCompile, useAiAssist…
+        └── components/
+            ├── editor/           # CodeMirror 6 + LaTeX mode
+            ├── pdf/              # Visor PDF con pdf.js
+            └── sidebar/          # Explorador, búsqueda, bibliografía, IA, Git…
 ```
 
----
-
-## Cómo fluye la información
+### Flujo de compilación
 
 ```
-Usuario edita → setContent() [Zustand]
-     │
-     ├─ useAutoSave (5 s debounce) ──→ save_file [Rust]
-     │
-     └─ Cmd+S / botón Compilar
-          │
-          ▼
-     save_file [Rust] → compile_latex [Rust/Tectonic]
-          │
-          ▼
-     CompileResult { success, pdf_path, errors }
-          │
-          ├─ success → setPdfPath (con ?t=timestamp)
-          │                │
-          │                ▼
-          │           PdfViewer detecta cambio de pdfPath
-          │           → read_file_bytes [Rust] → Uint8Array → pdf.js
-          │
-          └─ error → ErrorPanel muestra errores parseados
+Cmd+S
+  → save_file [Rust]
+  → compile_latex [Rust → Tectonic CLI]
+  → CompileResult { success, pdf_path, errors }
+      ├── success → setPdfPath (con ?t=timestamp para bust de caché)
+      │               → PdfViewer recarga el PDF
+      └── error   → ErrorPanel muestra errores parseados
 ```
 
-```
-Botón AI Assist
-     │
-     ▼
-stream_ai_assist [Rust] → HTTP POST al LLM (streaming)
-     │
-     ├─ emit("ai-token", token) ──→ appendAiToken() [Zustand] ──→ AiPanel
-     └─ emit("ai-done")         ──→ setAiStatus("done")
-```
-
----
-
-## Añadir un comando nuevo (guía rápida)
-
-1. **Rust** — añade la función en el módulo correspondiente de `src-tauri/src/`:
+### Añadir un comando Rust nuevo
 
 ```rust
+// 1. src-tauri/src/mi_modulo.rs
 #[tauri::command]
-pub fn mi_comando(parametro: String) -> Result<String, String> {
-    // ...
-    Ok(resultado)
+pub async fn mi_comando(param: String) -> Result<String, String> {
+    Ok(format!("hola {}", param))
 }
-```
 
-2. **Registra** el comando en `main.rs`:
+// 2. main.rs — registrar
+.invoke_handler(tauri::generate_handler![mi_modulo::mi_comando])
 
-```rust
-.invoke_handler(tauri::generate_handler![
-    // ...comandos existentes...
-    modulo::mi_comando,
-])
-```
-
-3. **Frontend** — añade el wrapper en `frontend/src/lib/tauri.ts`:
-
-```typescript
-export const miComando = (parametro: string): Promise<string> =>
-  invoke("mi_comando", { parametro });
-```
-
-4. Úsalo desde cualquier componente o hook importándolo de `../../lib/tauri`.
-
-> Los nombres en `invoke()` son snake_case (nombre de la función Rust).  
-> Los parámetros del objeto JS también deben ser camelCase → se convierten a snake_case automáticamente por Tauri.
-
----
-
-## Permisos Tauri 2
-
-Los permisos van en `src-tauri/capabilities/default.json`, **no** en `tauri.conf.json`.  
-Si añades un plugin nuevo (`tauri-plugin-X`), agrega sus permisos ahí:
-
-```json
-"permissions": [
-  "core:default",
-  "fs:default",
-  "fs:allow-read-text-file",
-  "fs:allow-write-text-file",
-  "fs:allow-read-dir",
-  "fs:allow-mkdir",
-  "fs:allow-exists",
-  "fs:scope-home-recursive",
-  "fs:scope-document-recursive",
-  "fs:scope-desktop-recursive",
-  "dialog:default",
-  "dialog:allow-open",
-  "shell:default"
-]
+// 3. frontend/src/lib/tauri.ts — wrapper
+export const miComando = (param: string): Promise<string> =>
+  invoke("mi_comando", { param });
 ```
 
 ---
 
-## Decisiones técnicas relevantes
+## Decisiones técnicas
 
 | Decisión | Motivo |
 |---|---|
-| PDF cargado como bytes via Rust | El protocolo `asset://` de Tauri tiene problemas de scope en producción; leer bytes desde Rust es confiable en dev y producción |
-| `docVersion` en PdfViewer | Sin este contador, re-compilar el mismo doc (mismas páginas, misma página activa) no dispararía el efecto de render en React |
-| `@codemirror/legacy-modes` + `stex` | No existe un paquete oficial `@codemirror/lang-latex`; `legacy-modes` adapta los modos de CodeMirror 5 |
-| Tauri 2 `WebviewWindow` / `Emitter` | Tauri 2 renombró la API: `get_webview_window()` en vez de `get_window()`, trait `Emitter` para `.emit()` |
-| Tectonic en vez de pdflatex | Sin instalación de TeX Live; gestiona paquetes automáticamente; produce PDF directamente |
+| **Tectonic** en vez de pdflatex | Sin instalación de TeX Live; gestiona paquetes automáticamente |
+| **pdf.js con `?url` worker** | `new URL(…, import.meta.url)` falla en el WebView de Tauri en producción; el import `?url` de Vite resuelve esto en build time |
+| **BibTeX en TypeScript puro** | Parser propio evita dependencias pesadas; control total sobre serialización y validación |
+| **Fetch BibTeX desde Rust** | Las llamadas a DOI/arXiv/ISBN desde el WebView fallan por CORS; desde Rust no hay restricciones |
+| **`readFileBytes` para PDFs** | El protocolo `asset://` tiene problemas de scope en producción; leer bytes desde Rust es fiable |
 
 ---
 
-## Ideas para continuar
+## Roadmap
 
-- [ ] Persistir la API Key de IA (Tauri `store` plugin o keychain del SO)
-- [ ] Soporte multi-archivo (`\input` / `\include`) con árbol de proyecto completo
-- [ ] Navegación por secciones en el sidebar (parsear `\section`, `\chapter`)
-- [ ] Búsqueda en el editor (CodeMirror search panel)
-- [ ] Sincronización bidireccional editor ↔ PDF (SyncTeX)
-- [ ] Exportar a otros formatos (Pandoc como comando shell)
-- [ ] Integración con Git (libgit2 vía Rust)
+- [ ] Firma de código (macOS notarization + Windows Authenticode)
+- [ ] SyncTeX — navegación bidireccional editor ↔ PDF
+- [ ] Persistencia de API Key en keychain del SO
+- [ ] Soporte `\input` / `\include` en el explorador
+- [ ] Exportar a otros formatos vía Pandoc
+- [ ] Autocompletado de referencias `\cite{…}` desde el `.bib`
+- [ ] Temas de color adicionales para el editor
+
+---
+
+<div align="center">
+
+Construido con Tauri, Rust, React y ☕
+
+[GitHub](https://github.com/DiegoViillalba/localleaf) · [Issues](https://github.com/DiegoViillalba/localleaf/issues) · [Releases](https://github.com/DiegoViillalba/localleaf/releases)
+
+</div>
