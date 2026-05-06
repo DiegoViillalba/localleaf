@@ -61,7 +61,7 @@ jobs:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
           releaseName: ${{ github.ref_type == 'tag' && format('LocalLeaf {0}', github.ref_name) || '' }}
           releaseBody: "Consulta el historial de commits para ver los cambios incluidos en esta versión."
-          releaseDraft: ${{ github.ref_type == 'tag' }}
+          releaseDraft: false
           prerelease: true
           args: --target aarch64-apple-darwin
 
@@ -114,7 +114,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
-          releaseDraft: ${{ github.ref_type == 'tag' }}
+          releaseDraft: false
           prerelease: true
           args: --target x86_64-pc-windows-msvc
 
@@ -189,6 +189,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
-          releaseDraft: ${{ github.ref_type == 'tag' }}
+          releaseDraft: false
           prerelease: true
           args: --target x86_64-unknown-linux-gnu
