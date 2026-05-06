@@ -163,6 +163,18 @@ jobs:
           key: linux-cargo-v2-${{ hashFiles('src-tauri/Cargo.lock') }}
           restore-keys: linux-cargo-v2-
 
+      - name: Descargar sidecar Tectonic (Linux x86_64)
+        run: |
+          mkdir -p src-tauri/bin
+          LATEST=$(curl -s https://api.github.com/repos/tectonic-typesetting/tectonic/releases/latest \
+            | grep '"tag_name"' | sed 's/.*"tectonic@\([^"]*\)".*/\1/')
+          echo "Tectonic version: $LATEST"
+          curl -L "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%40${LATEST}/tectonic-${LATEST}-x86_64-unknown-linux-musl.tar.gz" \
+            -o /tmp/tectonic.tar.gz
+          tar -xzf /tmp/tectonic.tar.gz -C /tmp
+          mv /tmp/tectonic src-tauri/bin/tectonic-x86_64-unknown-linux-gnu
+          chmod +x src-tauri/bin/tectonic-x86_64-unknown-linux-gnu
+
       - name: Instalar dependencias frontend
         run: npm ci
         working-directory: frontend
